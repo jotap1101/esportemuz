@@ -171,8 +171,9 @@
                 <h4>Nenhum campeonato encontrado</h4>
                 <p>Não há campeonatos que correspondam aos filtros selecionados.</p>
                 {% if user.is_authenticated %}
-                <a href="{% url 'campeonato_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-2"></i>Criar Primeiro Campeonato
+                <a href="{% url 'campeonato_create' %}" class="btn btn-primary d-inline-flex align-items-center justify-content-center">
+                    <i class="bi bi-plus-lg fs-5 me-2 mb-0"></i>
+                    Criar Primeiro Campeonato
                 </a>
                 {% endif %}
             </div>

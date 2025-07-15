@@ -29,12 +29,12 @@ def dashboard(request):
 def campeonatos_list(request):
     """Lista todos os campeonatos com filtros"""
     campeonatos = Campeonato.objects.all()
-    
+
     # Filtros
     ano = request.GET.get('ano')
     status = request.GET.get('status')
     search = request.GET.get('search')
-    
+
     if ano:
         campeonatos = campeonatos.filter(ano=ano)
     if status:
@@ -43,20 +43,22 @@ def campeonatos_list(request):
         campeonatos = campeonatos.filter(
             Q(nome__icontains=search)
         )
-    
+
     # Calcular estatísticas ANTES da paginação
-    campeonatos_em_andamento = campeonatos.filter(status='em_andamento').count()
+    campeonatos_em_andamento = campeonatos.filter(
+        status='em_andamento').count()
     campeonatos_finalizados = campeonatos.filter(status='finalizado').count()
     campeonatos_planejados = campeonatos.filter(status='planejado').count()
-    
+
     # Paginação
     paginator = Paginator(campeonatos, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     # Anos disponíveis para filtro
-    anos_disponiveis = Campeonato.objects.values_list('ano', flat=True).distinct().order_by('-ano')
-    
+    anos_disponiveis = Campeonato.objects.values_list(
+        'ano', flat=True).distinct().order_by('-ano')
+
     context = {
         'page_obj': page_obj,
         'anos_disponiveis': anos_disponiveis,
@@ -75,47 +77,50 @@ def campeonatos_list(request):
 def campeonato_detail(request, pk):
     """Detalhes de um campeonato específico"""
     campeonato = get_object_or_404(Campeonato, pk=pk)
-    
+
     # Abas do campeonato
     aba = request.GET.get('aba', 'info')
-    
+
     context = {
         'campeonato': campeonato,
         'aba': aba,
     }
-    
+
     if aba == 'equipes':
-        context['participacoes'] = campeonato.participacao_set.all().select_related('equipe')
+        context['participacoes'] = campeonato.participacao_set.all(
+        ).select_related('equipe')
     elif aba == 'classificacao':
         if campeonato.tipo == 'grupos_mata_mata':
             # Classificação por grupos
             grupos = {}
             participacoes = campeonato.participacao_set.all().select_related('equipe')
-            
+
             # Identificar todos os grupos existentes
             for participacao in participacoes:
                 grupo = participacao.grupo or 'A'
                 if grupo not in grupos:
                     grupos[grupo] = []
-            
+
             # Obter classificação para cada grupo
             classificacao_grupos = {}
             for grupo in grupos.keys():
-                classificacao_grupos[grupo] = ClassificacaoService.obter_classificacao_por_grupo(campeonato, grupo)
-            
+                classificacao_grupos[grupo] = ClassificacaoService.obter_classificacao_por_grupo(
+                    campeonato, grupo)
+
             context['classificacao_grupos'] = classificacao_grupos
         else:
             # Classificação geral
-            context['classificacao'] = ClassificacaoService.obter_classificacao_por_grupo(campeonato)
+            context['classificacao'] = ClassificacaoService.obter_classificacao_por_grupo(
+                campeonato)
     elif aba == 'partidas':
         if campeonato.tipo == 'grupos_mata_mata':
             # Organizar rodadas por grupo para campeonatos de grupos
             rodadas_por_grupo = {}
             rodadas = campeonato.rodada_set.all().prefetch_related(
-                'partida_set__equipe_mandante', 
+                'partida_set__equipe_mandante',
                 'partida_set__equipe_visitante'
             )
-            
+
             for rodada in rodadas:
                 # Determinar o grupo da rodada baseado nas equipes
                 grupos_rodada = set()
@@ -126,7 +131,7 @@ def campeonato_detail(request, pk):
                     ).first()
                     if participacao_mandante and participacao_mandante.grupo:
                         grupos_rodada.add(participacao_mandante.grupo)
-                
+
                 # Se a rodada tem equipes de um grupo específico
                 if len(grupos_rodada) == 1:
                     grupo = list(grupos_rodada)[0]
@@ -138,13 +143,14 @@ def campeonato_detail(request, pk):
                     if 'Mata-mata' not in rodadas_por_grupo:
                         rodadas_por_grupo['Mata-mata'] = []
                     rodadas_por_grupo['Mata-mata'].append(rodada)
-            
+
             context['rodadas_por_grupo'] = rodadas_por_grupo
         else:
             # Classificação geral
-            rodadas = campeonato.rodada_set.all().prefetch_related('partida_set__equipe_mandante', 'partida_set__equipe_visitante')
+            rodadas = campeonato.rodada_set.all().prefetch_related(
+                'partida_set__equipe_mandante', 'partida_set__equipe_visitante')
             context['rodadas'] = rodadas
-    
+
     return render(request, 'campeonatos/campeonato_detail.html', context)
 
 
@@ -155,11 +161,12 @@ def campeonato_create(request):
         form = CampeonatoForm(request.POST)
         if form.is_valid():
             campeonato = form.save()
-            messages.success(request, f'Campeonato "{campeonato.nome}" criado com sucesso!')
+            messages.success(
+                request, f'Campeonato "{campeonato.nome}" criado com sucesso!')
             return redirect('campeonato_detail', pk=campeonato.pk)
     else:
         form = CampeonatoForm()
-    
+
     return render(request, 'campeonatos/campeonato_form.html', {'form': form, 'title': 'Criar Campeonato'})
 
 
@@ -167,18 +174,19 @@ def campeonato_create(request):
 def campeonato_edit(request, pk):
     """Editar campeonato existente"""
     campeonato = get_object_or_404(Campeonato, pk=pk)
-    
+
     if request.method == 'POST':
         form = CampeonatoForm(request.POST, instance=campeonato)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Campeonato "{campeonato.nome}" atualizado com sucesso!')
+            messages.success(
+                request, f'Campeonato "{campeonato.nome}" atualizado com sucesso!')
             return redirect('campeonato_detail', pk=campeonato.pk)
     else:
         form = CampeonatoForm(instance=campeonato)
-    
+
     return render(request, 'campeonatos/campeonato_form.html', {
-        'form': form, 
+        'form': form,
         'title': 'Editar Campeonato',
         'campeonato': campeonato
     })
@@ -187,20 +195,20 @@ def campeonato_edit(request, pk):
 def equipes_list(request):
     """Lista todas as equipes"""
     equipes = Equipe.objects.all()
-    
+
     search = request.GET.get('search')
     if search:
         equipes = equipes.filter(
             Q(nome__icontains=search) | Q(cidade__icontains=search)
         )
-    
+
     # Calcular estatísticas ANTES da paginação
     equipes_com_escudo = equipes.filter(escudo__isnull=False).count()
-    
+
     paginator = Paginator(equipes, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     return render(request, 'campeonatos/equipes_list.html', {
         'page_obj': page_obj,
         'search': search,
@@ -215,11 +223,12 @@ def equipe_create(request):
         form = EquipeForm(request.POST, request.FILES)
         if form.is_valid():
             equipe = form.save()
-            messages.success(request, f'Equipe "{equipe.nome}" criada com sucesso!')
+            messages.success(
+                request, f'Equipe "{equipe.nome}" criada com sucesso!')
             return redirect('equipes_list')
     else:
         form = EquipeForm()
-    
+
     return render(request, 'campeonatos/equipe_form.html', {'form': form, 'title': 'Criar Equipe'})
 
 
@@ -227,18 +236,19 @@ def equipe_create(request):
 def equipe_edit(request, pk):
     """Editar equipe existente"""
     equipe = get_object_or_404(Equipe, pk=pk)
-    
+
     if request.method == 'POST':
         form = EquipeForm(request.POST, request.FILES, instance=equipe)
         if form.is_valid():
             form.save()
-            messages.success(request, f'Equipe "{equipe.nome}" atualizada com sucesso!')
+            messages.success(
+                request, f'Equipe "{equipe.nome}" atualizada com sucesso!')
             return redirect('equipes_list')
     else:
         form = EquipeForm(instance=equipe)
-    
+
     return render(request, 'campeonatos/equipe_form.html', {
-        'form': form, 
+        'form': form,
         'title': 'Editar Equipe',
         'equipe': equipe
     })
@@ -249,17 +259,17 @@ def equipe_edit(request, pk):
 def gerar_rodadas(request, campeonato_id):
     """Gera automaticamente as rodadas de um campeonato"""
     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
-    
+
     try:
         if campeonato.tipo == 'pontos_corridos':
             CampeonatoService.gerar_rodadas_pontos_corridos(campeonato)
         else:
             CampeonatoService.gerar_rodadas_grupos(campeonato)
-        
+
         messages.success(request, 'Rodadas geradas com sucesso!')
     except ValueError as e:
         messages.error(request, str(e))
-    
+
     return redirect('campeonato_detail', pk=campeonato.pk)
 
 
@@ -273,16 +283,17 @@ def registrar_resultado(request):
         partida_id = data.get('partida_id')
         gols_mandante = int(data.get('gols_mandante', 0))
         gols_visitante = int(data.get('gols_visitante', 0))
-        
+
         partida = get_object_or_404(Partida, pk=partida_id)
-        
-        PartidaService.registrar_resultado(partida, gols_mandante, gols_visitante)
-        
+
+        PartidaService.registrar_resultado(
+            partida, gols_mandante, gols_visitante)
+
         return JsonResponse({
             'success': True,
             'message': 'Resultado registrado com sucesso!'
         })
-    
+
     except Exception as e:
         return JsonResponse({
             'success': False,
@@ -300,24 +311,25 @@ def adicionar_equipe_campeonato(request):
         campeonato_id = data.get('campeonato_id')
         equipe_id = data.get('equipe_id')
         grupo = data.get('grupo', None)
-        
+
         campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
         equipe = get_object_or_404(Equipe, pk=equipe_id)
-        
+
         # Se não especificou grupo e é campeonato de grupos, atribuir automaticamente
         if not grupo and campeonato.tipo == 'grupos_mata_mata':
-            grupo = CampeonatoService.obter_proximo_grupo_disponivel(campeonato)
-        
+            grupo = CampeonatoService.obter_proximo_grupo_disponivel(
+                campeonato)
+
         participacao, created = Participacao.objects.get_or_create(
             campeonato=campeonato,
             equipe=equipe,
             defaults={'grupo': grupo}
         )
-        
+
         if created:
             # Atualizar classificação
             ClassificacaoService.atualizar_classificacao_campeonato(campeonato)
-            
+
             grupo_texto = f" no {grupo}" if grupo else ""
             return JsonResponse({
                 'success': True,
@@ -328,7 +340,7 @@ def adicionar_equipe_campeonato(request):
                 'success': False,
                 'message': 'Equipe já está participando deste campeonato!'
             })
-    
+
     except Exception as e:
         return JsonResponse({
             'success': False,
@@ -344,32 +356,32 @@ def remover_equipe_campeonato(request):
     try:
         data = json.loads(request.body)
         participacao_id = data.get('participacao_id')
-        
+
         if not participacao_id:
             return JsonResponse({
                 'success': False,
                 'message': 'ID da participação é obrigatório'
             })
-        
+
         participacao = get_object_or_404(Participacao, pk=participacao_id)
         campeonato = participacao.campeonato
         equipe_nome = participacao.equipe.nome
-        
+
         # Verificar se o campeonato permite remoção de equipes
         if campeonato.status not in ['planejado', 'inscricoes_abertas']:
             return JsonResponse({
                 'success': False,
                 'message': 'Não é possível remover equipes de um campeonato em andamento'
             })
-        
+
         # Remover a participação
         participacao.delete()
-        
+
         return JsonResponse({
             'success': True,
             'message': f'Equipe {equipe_nome} removida do campeonato com sucesso'
         })
-        
+
     except Exception as e:
         return JsonResponse({
             'success': False,
@@ -384,23 +396,23 @@ def partidas_list(request):
         'equipe_mandante',
         'equipe_visitante'
     ).order_by('-rodada__campeonato__ano', 'rodada__campeonato__nome', 'rodada__numero')
-    
+
     # Filtros
     campeonato_id = request.GET.get('campeonato')
     status = request.GET.get('status')
-    
+
     if campeonato_id:
         partidas = partidas.filter(rodada__campeonato_id=campeonato_id)
     if status:
         partidas = partidas.filter(status=status)
-    
+
     # Calcular estatísticas ANTES da paginação
     partidas_finalizadas = partidas.filter(status='finalizada').count()
     partidas_pendentes = partidas.filter(status='pendente').count()
-    
+
     # Organizar partidas por campeonato e rodada
     partidas_organizadas = {}
-    
+
     # Se há filtro por campeonato específico, usar paginação normal
     if campeonato_id:
         paginator = Paginator(partidas, 20)
@@ -411,29 +423,31 @@ def partidas_list(request):
         # Se não há filtro, mostrar todas organizadas (limitadas para performance)
         partidas_para_organizar = partidas[:100]  # Limitar para performance
         page_obj = None
-    
+
     for partida in partidas_para_organizar:
         campeonato = partida.rodada.campeonato
         rodada = partida.rodada
-        
+
         if campeonato.nome not in partidas_organizadas:
             partidas_organizadas[campeonato.nome] = {
                 'campeonato': campeonato,
                 'rodadas': {}
             }
-        
+
         if rodada.nome not in partidas_organizadas[campeonato.nome]['rodadas']:
             partidas_organizadas[campeonato.nome]['rodadas'][rodada.nome] = {
                 'rodada': rodada,
                 'partidas': []
             }
-        
-        partidas_organizadas[campeonato.nome]['rodadas'][rodada.nome]['partidas'].append(partida)
-    
+
+        partidas_organizadas[campeonato.nome]['rodadas'][rodada.nome]['partidas'].append(
+            partida)
+
     context = {
         'page_obj': page_obj,
         'partidas_organizadas': partidas_organizadas,
         'campeonatos': Campeonato.objects.all(),
+        'total_partidas': partidas.count(),
         'partidas_finalizadas': partidas_finalizadas,
         'partidas_pendentes': partidas_pendentes,
         'filtros': {
@@ -450,13 +464,13 @@ def api_equipes(request):
     """API para buscar equipes (para formulários)"""
     search = request.GET.get('search', '')
     campeonato_id = request.GET.get('campeonato_id')
-    
+
     equipes = Equipe.objects.all()
-    
+
     # Filtrar por busca
     if search:
         equipes = equipes.filter(nome__icontains=search)
-    
+
     # Excluir equipes já no campeonato
     if campeonato_id:
         try:
@@ -466,15 +480,15 @@ def api_equipes(request):
             )
         except Campeonato.DoesNotExist:
             pass
-    
+
     equipes = equipes[:20]  # Limitar resultados
-    
+
     data = [{
         'id': equipe.id,
         'nome': equipe.nome,
         'cidade': equipe.cidade
     } for equipe in equipes]
-    
+
     return JsonResponse({'equipes': data})
 
 
@@ -483,9 +497,10 @@ def api_classificacao(request, campeonato_id):
     """API para obter classificação atualizada via AJAX"""
     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
     grupo = request.GET.get('grupo')
-    
-    classificacao = ClassificacaoService.obter_classificacao_por_grupo(campeonato, grupo)
-    
+
+    classificacao = ClassificacaoService.obter_classificacao_por_grupo(
+        campeonato, grupo)
+
     data = [{
         'equipe': item.equipe.nome,
         'pontos': item.pontos,
@@ -497,7 +512,7 @@ def api_classificacao(request, campeonato_id):
         'gols_contra': item.gols_contra,
         'saldo_gols': item.saldo_gols,
     } for item in classificacao]
-    
+
     return JsonResponse({'classificacao': data})
 
 
@@ -507,15 +522,15 @@ def campeonato_delete(request, pk):
     """Exclui um campeonato e todos os dados relacionados (menos equipes)"""
     campeonato = get_object_or_404(Campeonato, pk=pk)
     nome = campeonato.nome
-    
+
     # Excluir todas as participações, rodadas, partidas e classificações relacionadas
     Participacao.objects.filter(campeonato=campeonato).delete()
     Rodada.objects.filter(campeonato=campeonato).delete()
     Partida.objects.filter(rodada__campeonato=campeonato).delete()
     Classificacao.objects.filter(campeonato=campeonato).delete()
-    
+
     # Excluir o campeonato
     campeonato.delete()
-    
+
     messages.success(request, f'Campeonato "{nome}" excluído com sucesso!')
     return redirect('campeonatos_list')

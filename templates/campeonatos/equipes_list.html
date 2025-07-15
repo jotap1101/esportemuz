@@ -109,8 +109,9 @@
                 <h4>Nenhuma equipe encontrada</h4>
                 <p>Não há equipes que correspondam aos filtros selecionados.</p>
                 {% if user.is_authenticated %}
-                <a href="{% url 'equipe_create' %}" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-2"></i>Cadastrar Primeira Equipe
+                <a href="{% url 'equipe_create' %}" class="btn btn-primary d-inline-flex align-items-center justify-content-center">
+                    <i class="bi bi-plus-lg fs-5 me-2 mb-0"></i>
+					Cadastrar Primeira Equipe
                 </a>
                 {% endif %}
             </div>

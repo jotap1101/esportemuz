@@ -259,8 +259,9 @@
             <i class="bi bi-calendar-event"></i>
             <h4>Nenhuma partida encontrada</h4>
             <p>Não há partidas que correspondam aos filtros selecionados.</p>
-            <a href="{% url 'campeonatos_list' %}" class="btn btn-primary">
-                <i class="bi bi-trophy me-2"></i>Ver Campeonatos
+            <a href="{% url 'campeonatos_list' %}" class="btn btn-primary d-inline-flex align-items-center justify-content-center">
+                <i class="bi bi-trophy fs-5 me-2 mb-0"></i>
+				Ver Campeonatos
             </a>
         </div>
     </div>
@@ -328,7 +329,7 @@
                 <div class="row text-center">
                     <div class="col-md-3 col-sm-6 mb-3">
                         <div class="border-end">
-                            <h4 class="text-primary">{{ page_obj.paginator.count }}</h4>
+                            <h4 class="text-primary">{{ total_partidas }}</h4>
                             <small class="text-muted">Total de Partidas</small>
                         </div>
                     </div>
