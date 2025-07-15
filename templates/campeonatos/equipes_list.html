@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Equipes - EsporteMuz{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-4 fw-bold text-primary">
+                    <i class="bi bi-people-fill me-3"></i>Equipes
+                </h1>
+                <p class="lead text-muted">Gerencie todas as equipes</p>
+            </div>
+            {% if user.is_authenticated %}
+            <a href="{% url 'equipe_create' %}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-lg me-2"></i>Nova Equipe
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="filter-form">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-8">
+                            <label for="search" class="form-label">Buscar</label>
+                            <input type="text" name="search" id="search" class="form-control" 
+                                   placeholder="Nome da equipe ou cidade..." value="{{ search }}">
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-search me-1"></i>Filtrar
+                            </button>
+                        </div>
+                        
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-secondary w-100 btn-clear-filters">
+                                <i class="bi bi-x-circle me-1"></i>Limpar
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Equipes -->
+<div class="row">
+    {% if page_obj %}
+        {% for equipe in page_obj %}
+        <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    {% if equipe.escudo %}
+                        <img src="{{ equipe.escudo.url }}" alt="{{ equipe.nome }}" 
+                             class="team-logo-lg mb-3">
+                    {% else %}
+                        <div class="team-logo-lg bg-light d-flex align-items-center justify-content-center mb-3 mx-auto">
+                            <i class="bi bi-shield text-muted" style="font-size: 2rem;"></i>
+                        </div>
+                    {% endif %}
+                    
+                    <h5 class="card-title">{{ equipe.nome }}</h5>
+                    <p class="card-text">
+                        <small class="text-muted">
+                            <i class="bi bi-geo-alt me-1"></i>{{ equipe.cidade }}
+                        </small>
+                        <br>
+                        <small class="text-muted">
+                            <i class="bi bi-person me-1"></i>{{ equipe.representante }}
+                        </small>
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <small class="text-muted d-block mb-2">
+                            <i class="bi bi-calendar me-1"></i>
+                            Criado em {{ equipe.criado_em|date:"d/m/Y" }}
+                        </small>
+                        
+                        {% if user.is_authenticated %}
+                        <div class="btn-group w-100" role="group">
+                            <a href="{% url 'equipe_edit' equipe.pk %}" class="btn btn-outline-primary">
+                                <i class="bi bi-eye me-1"></i>Ver
+                            </a>
+                            <a href="{% url 'equipe_edit' equipe.pk %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil me-1"></i>Editar
+                            </a>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <!-- Empty State -->
+        <div class="col-12">
+            <div class="empty-state">
+                <i class="bi bi-people"></i>
+                <h4>Nenhuma equipe encontrada</h4>
+                <p>Não há equipes que correspondam aos filtros selecionados.</p>
+                {% if user.is_authenticated %}
+                <a href="{% url 'equipe_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-2"></i>Cadastrar Primeira Equipe
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Paginação -->
+{% if page_obj.has_other_pages %}
+<div class="row mt-4">
+    <div class="col-12">
+        <nav aria-label="Paginação de equipes">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}">
+                            <i class="bi bi-chevron-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}">
+                            <i class="bi bi-chevron-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+
+<!-- Estatísticas -->
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Estatísticas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <h4 class="text-primary">{{ page_obj.paginator.count }}</h4>
+                        <small class="text-muted">Total de Equipes</small>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <h4 class="text-success">{{ equipes_com_escudo }}</h4>
+                        <small class="text-muted">Com Escudo</small>
+                    </div>
+                    <div class="col-md-4 col-sm-6 mb-3">
+                        <h4 class="text-info">
+                            {% comment %}Count unique cities{% endcomment %}
+                            {{ page_obj|length }}
+                        </h4>
+                        <small class="text-muted">Equipes Mostradas</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

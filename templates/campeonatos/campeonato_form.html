@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - EsporteMuz{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold text-primary">
+                    <i class="bi bi-trophy-fill me-3"></i>{{ title }}
+                </h1>
+                <p class="lead text-muted">Preencha os dados do campeonato</p>
+            </div>
+            <a href="{% url 'campeonatos_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-form-text me-2"></i>Dados do Campeonato
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">
+                                Nome do Campeonato <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.nome.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.ano.id_for_label }}" class="form-label">
+                                Ano <span class="text-danger">*</span>
+                            </label>
+                            {{ form.ano }}
+                            {% if form.ano.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.ano.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                Tipo de Campeonato <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.tipo.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <strong>Pontos Corridos:</strong> Todos contra todos<br>
+                                <strong>Grupos + Mata-mata:</strong> Fase de grupos seguida de eliminatórias
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3" id="gruposConfig" style="display: none;">
+                            <label for="{{ form.numero_grupos.id_for_label }}" class="form-label">
+                                Número de Grupos
+                            </label>
+                            {{ form.numero_grupos }}
+                            {% if form.numero_grupos.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.numero_grupos.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row" id="gruposDetalhes" style="display: none;">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.times_por_grupo.id_for_label }}" class="form-label">
+                                Times por Grupo
+                            </label>
+                            {{ form.times_por_grupo }}
+                            {% if form.times_por_grupo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.times_por_grupo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.classificados_por_grupo.id_for_label }}" class="form-label">
+                                Classificados por Grupo
+                            </label>
+                            {{ form.classificados_por_grupo }}
+                            {% if form.classificados_por_grupo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.classificados_por_grupo.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'campeonatos_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% if campeonato %}Atualizar{% else %}Criar{% endif %} Campeonato
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('{{ form.tipo.id_for_label }}');
+    const gruposConfig = document.getElementById('gruposConfig');
+    const gruposDetalhes = document.getElementById('gruposDetalhes');
+    
+    function toggleGruposConfig() {
+        if (tipoSelect.value === 'grupos_mata_mata') {
+            gruposConfig.style.display = 'block';
+            gruposDetalhes.style.display = 'flex';
+        } else {
+            gruposConfig.style.display = 'none';
+            gruposDetalhes.style.display = 'none';
+        }
+    }
+    
+    // Initial state
+    toggleGruposConfig();
+    
+    // On change
+    tipoSelect.addEventListener('change', toggleGruposConfig);
+});
+</script>
+{% endblock %}

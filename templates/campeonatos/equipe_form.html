@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - EsporteMuz{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold text-primary">
+                    <i class="bi bi-people-fill me-3"></i>{{ title }}
+                </h1>
+                <p class="lead text-muted">Preencha os dados da equipe</p>
+            </div>
+            <a href="{% url 'equipes_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-form-text me-2"></i>Dados da Equipe
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">
+                                Nome da Equipe <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.nome.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.cidade.id_for_label }}" class="form-label">
+                                Cidade <span class="text-danger">*</span>
+                            </label>
+                            {{ form.cidade }}
+                            {% if form.cidade.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.cidade.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.representante.id_for_label }}" class="form-label">
+                                Representante <span class="text-danger">*</span>
+                            </label>
+                            {{ form.representante }}
+                            {% if form.representante.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.representante.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.escudo.id_for_label }}" class="form-label">
+                                Escudo da Equipe
+                            </label>
+                            {{ form.escudo }}
+                            {% if form.escudo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.escudo.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Preview do escudo atual -->
+                    {% if equipe and equipe.escudo %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label">Escudo Atual</label>
+                            <div class="d-flex align-items-center">
+                                <img src="{{ equipe.escudo.url }}" alt="{{ equipe.nome }}" 
+                                     class="team-logo-lg me-3">
+                                <div>
+                                    <p class="mb-1">{{ equipe.escudo.name }}</p>
+                                    <small class="text-muted">
+                                        Selecione um novo arquivo acima para substituir
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'equipes_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% if equipe %}Atualizar{% else %}Criar{% endif %} Equipe
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview de imagem
+    const escudoInput = document.getElementById('{{ form.escudo.id_for_label }}');
+    
+    if (escudoInput) {
+        escudoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validar tipo de arquivo
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Formato de arquivo não suportado. Use JPG, PNG ou GIF.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Validar tamanho (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Arquivo muito grande. O tamanho máximo é 2MB.');
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Mostrar preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    let preview = document.getElementById('escudo-preview');
+                    if (!preview) {
+                        preview = document.createElement('div');
+                        preview.id = 'escudo-preview';
+                        preview.className = 'mt-2';
+                        escudoInput.parentNode.appendChild(preview);
+                    }
+                    
+                    preview.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <img src="${e.target.result}" alt="Preview" 
+                                 style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%;" 
+                                 class="me-2">
+                            <div>
+                                <small class="text-muted">Preview do novo escudo</small>
+                            </div>
+                        </div>
+                    `;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
