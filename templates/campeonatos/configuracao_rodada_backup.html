@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuração de Rodadas - {{ campeonato.nome }}{% endblock title %}
+
+{% block content %}
+<div class="container-fluid">
+	<!-- Header -->
+	<div class="row mb-4">
+		<div class="col-12">
+			<div class="d-flex justify-content-between align-items-center">
+				<div>
+					<h1 class="h3 mb-1">Configuração de Rodadas</h1>
+					<p class="text-muted">{{ campeonato.nome }} - {{ campeonato.ano }}</p>
+				</div>
+				<a href="{% url 'campeonato_detail' campeonato.id %}" class="btn btn-outline-secondary">
+					<i class="fas fa-arrow-left"></i> 
+					Voltar
+				</a>
+			</div>
+		</div>
+	</div>
+
+	<!-- Card de Configuração -->
+	<div class="row">
+		<div class="col-lg-8">
+			<div class="card">
+				<div class="card-header">
+					<h5 class="card-title mb-0">
+						<i class="fas fa-cogs"></i> 
+						Configurações de Rodada
+					</h5>
+				</div>
+				<div class="card-body">
+					<form method="post">
+						{% csrf_token %}
+
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.tipo_geracao_rodada.id_for_label }}" class="form-label">
+									{{ form.tipo_geracao_rodada.label }}
+								</label>
+								{{ form.tipo_geracao_rodada }}
+								<div class="form-text">
+									{{ form.tipo_geracao_rodada.help_text }}
+								</div>
+							</div>
+
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.partidas_por_rodada.id_for_label }}" class="form-label">
+									{{ form.partidas_por_rodada.label }}
+								</label>
+								{{ form.partidas_por_rodada }}
+								<div class="form-text">
+									{{ form.partidas_por_rodada.help_text }}
+								</div>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.dias_entre_rodadas.id_for_label }}" class="form-label">
+									{{ form.dias_entre_rodadas.label }}
+								</label>
+								{{ form.dias_entre_rodadas }}
+								<div class="form-text">
+									{{ form.dias_entre_rodadas.help_text }}
+								</div>
+							</div>
+
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.data_inicio.id_for_label }}" class="form-label">
+									{{ form.data_inicio.label }}
+								</label>
+								{{ form.data_inicio }}
+								<div class="form-text">{{ form.data_inicio.help_text }}</div>
+							</div>
+						</div>
+								</label>
+								{{ form.partidas_por_rodada }}
+								<div class="form-text">
+									{{ form.partidas_por_rodada.help_text }}
+								</div>
+							</div>
+						</div>
+
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.dias_entre_rodadas.id_for_label }}" class="form-label">
+									Dias entre Rodadas
+								</label>
+								{{ form.dias_entre_rodadas }}
+								<div class="form-text">
+									{{ form.dias_entre_rodadas.help_text }}
+								</div>
+							</div>
+
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.data_inicio_campeonato.id_for_label }}" class="form-label">
+									Data de Início
+								</label>
+								{{ form.data_inicio_campeonato }}
+								<div class="form-text">Data da primeira rodada</div>
+							</div>
+						</div>
+
+						<div class="d-flex gap-2">
+							<button type="submit" class="btn btn-primary">
+								<i class="fas fa-save"></i> 
+								Salvar Configuração
+							</button>
+							<button type="submit" name="gerar_rodadas" class="btn btn-success">
+								<i class="fas fa-play"></i> 
+								Salvar e Gerar Rodadas
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+
+		<!-- Card de Informações -->
+		<div class="col-lg-4">
+			<div class="card">
+				<div class="card-header">
+					<h6 class="card-title mb-0">
+						<i class="fas fa-info-circle"></i> 
+						Informações
+					</h6>
+				</div>
+				<div class="card-body">
+					<div class="mb-3">
+						<small class="text-muted d-block">Equipes Participantes</small>
+						<strong>{{ campeonato.total_equipes }} equipes</strong>
+					</div>
+
+					{% if configuracao %}
+						<div class="mb-3">
+							<small class="text-muted d-block">Configuração Atual</small>
+							<div class="badge bg-info">
+								{{ configuracao.get_tipo_configuracao_display }}
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<small class="text-muted d-block">Partidas por Rodada</small>
+							<strong>{{ configuracao.partidas_por_rodada }}</strong>
+						</div>
+					{% endif %}
+
+					<hr />
+
+					<div class="alert alert-info small">
+						<strong>
+							Configuração Manual:
+						</strong> 
+						Você escolhe quais partidas acontecem em cada rodada.
+						<br />
+						<br />
+						<strong>
+							Configuração Automática:
+						</strong> 
+						O sistema distribui as partidas aleatoriamente nas rodadas.
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		const tipoSelect = document.getElementById(
+			"{{ form.tipo_configuracao.id_for_label }}"
+		);
+		const partidasPorRodada = document.getElementById(
+			"{{ form.partidas_por_rodada.id_for_label }}"
+		);
+
+		function atualizarInterface() {
+			if (tipoSelect.value === "manual") {
+				partidasPorRodada.closest(".col-md-6").style.display = "block";
+			} else {
+				partidasPorRodada.closest(".col-md-6").style.display = "block";
+			}
+		}
+
+		tipoSelect.addEventListener("change", atualizarInterface);
+		atualizarInterface();
+	});
+</script>
+{% endblock extra_js %}

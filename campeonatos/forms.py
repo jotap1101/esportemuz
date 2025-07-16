@@ -7,7 +7,7 @@ class CampeonatoForm(ModelForm):
     class Meta:
         model = Campeonato
         fields = [
-            'nome', 'descricao', 'ano', 'tipo', 
+            'nome', 'descricao', 'ano', 'tipo',
             'data_inicio', 'data_fim_prevista', 'local_padrao',
             'numero_grupos', 'times_por_grupo', 'classificados_por_grupo',
             'fase_inicial_mata_mata', 'max_equipes', 'classificacao_inicial',
@@ -91,7 +91,7 @@ class CampeonatoForm(ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['nome'].required = True
         self.fields['ano'].required = True
-        
+
         # Condicionalmente esconder campos baseado no tipo
         if 'tipo' in self.data:
             tipo = self.data['tipo']
@@ -104,8 +104,8 @@ class CampeonatoForm(ModelForm):
 class RodadaForm(ModelForm):
     class Meta:
         model = Rodada
-        fields = ['nome', 'tipo_rodada', 'data_inicio', 'data_fim', 'local_padrao', 
-                 'grupo', 'partidas_simultaneas', 'observacoes']
+        fields = ['nome', 'tipo_rodada', 'data_inicio', 'data_fim', 'local_padrao',
+                  'grupo', 'partidas_simultaneas', 'observacoes']
         widgets = {
             'nome': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -142,7 +142,7 @@ class RodadaForm(ModelForm):
     def __init__(self, *args, **kwargs):
         campeonato = kwargs.pop('campeonato', None)
         super().__init__(*args, **kwargs)
-        
+
         if campeonato:
             # Configurar choices de grupo baseado no campeonato
             if campeonato.tipo == 'grupos_mata_mata':
@@ -159,7 +159,7 @@ class PartidaForm(ModelForm):
     class Meta:
         model = Partida
         fields = ['equipe_mandante', 'equipe_visitante', 'local', 'data_hora',
-                 'duracao_prevista', 'arbitro', 'observacoes']
+                  'duracao_prevista', 'arbitro', 'observacoes']
         widgets = {
             'equipe_mandante': forms.Select(attrs={
                 'class': 'form-select'
@@ -194,19 +194,21 @@ class PartidaForm(ModelForm):
     def __init__(self, *args, **kwargs):
         rodada = kwargs.pop('rodada', None)
         super().__init__(*args, **kwargs)
-        
+
         if rodada:
             # Filtrar equipes baseado no campeonato e grupo (se aplicável)
             participacoes = rodada.campeonato.participacao_set.all()
-            
+
             if rodada.grupo:
                 participacoes = participacoes.filter(grupo=rodada.grupo)
-            
+
             equipes = [p.equipe for p in participacoes]
             choices = [(e.id, e.nome) for e in equipes]
-            
-            self.fields['equipe_mandante'].choices = [('', '--- Selecione ---')] + choices
-            self.fields['equipe_visitante'].choices = [('', '--- Selecione ---')] + choices
+
+            self.fields['equipe_mandante'].choices = [
+                ('', '--- Selecione ---')] + choices
+            self.fields['equipe_visitante'].choices = [
+                ('', '--- Selecione ---')] + choices
 
 
 class ResultadoPartidaForm(forms.Form):
@@ -414,3 +416,45 @@ class FiltroCampeonatoForm(forms.Form):
             'placeholder': 'Buscar por nome...'
         })
     )
+
+
+class ConfiguracaoRodadaForm(ModelForm):
+    """Form para configuração específica de rodadas de um campeonato"""
+
+    class Meta:
+        model = Campeonato
+        fields = [
+            'tipo_geracao_rodada', 'partidas_por_rodada',
+            'dias_entre_rodadas', 'data_inicio'
+        ]
+        widgets = {
+            'tipo_geracao_rodada': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'partidas_por_rodada': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'max': 20
+            }),
+            'dias_entre_rodadas': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'max': 30
+            }),
+            'data_inicio': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+        }
+        labels = {
+            'tipo_geracao_rodada': 'Tipo de Configuração',
+            'partidas_por_rodada': 'Partidas por Rodada',
+            'dias_entre_rodadas': 'Dias entre Rodadas',
+            'data_inicio': 'Data de Início',
+        }
+        help_texts = {
+            'tipo_geracao_rodada': 'Escolha como as rodadas serão organizadas',
+            'partidas_por_rodada': 'Número máximo de partidas por rodada',
+            'dias_entre_rodadas': 'Intervalo em dias entre cada rodada',
+            'data_inicio': 'Data de início do campeonato (primeira rodada)',
+        }

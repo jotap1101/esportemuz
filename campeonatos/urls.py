@@ -16,11 +16,10 @@ urlpatterns = [
          views.campeonato_delete, name='campeonato_delete'),
 
     # Configuração e Gerenciamento de Rodadas
-    # TEMPORARIAMENTE COMENTADO - SERÁ REFATORADO
-    # path('campeonatos/<int:campeonato_id>/configuracao-rodada/',
-    #      views.configuracao_rodada, name='configuracao_rodada'),
-    # path('campeonatos/<int:campeonato_id>/gerar-rodadas/',
-    #      views.gerar_rodadas, name='gerar_rodadas'),
+    path('campeonatos/<int:campeonato_id>/configuracao-rodada/',
+         views.configuracao_rodada, name='configuracao_rodada'),
+    path('campeonatos/<int:campeonato_id>/gerar-rodadas/',
+         views.gerar_rodadas, name='gerar_rodadas'),
     path('campeonatos/<int:campeonato_id>/gerenciar-rodadas/',
          views.gerenciar_rodadas, name='gerenciar_rodadas'),
     path('campeonatos/<int:campeonato_id>/rodadas/<int:rodada_id>/editar/',

@@ -10,7 +10,7 @@ import json
 
 from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao
 from .services import CampeonatoService, ClassificacaoService, PartidaService, RodadaService
-from .forms import CampeonatoForm, EquipeForm, PartidaForm, RodadaForm, PartidaManualForm
+from .forms import CampeonatoForm, EquipeForm, PartidaForm, RodadaForm, PartidaManualForm, ConfiguracaoRodadaForm
 
 
 def dashboard(request):
@@ -164,6 +164,13 @@ def campeonato_create(request):
             messages.success(
                 request, f'Campeonato "{campeonato.nome}" criado com sucesso!')
             return redirect('campeonato_detail', pk=campeonato.pk)
+        else:
+            # Adicionar debug para ver os erros
+            print("Form não é válido:")
+            print("Erros dos campos:", form.errors)
+            print("Dados recebidos:", request.POST)
+            messages.error(
+                request, 'Erro ao criar campeonato. Verifique os dados informados.')
     else:
         form = CampeonatoForm()
 
@@ -255,22 +262,28 @@ def equipe_edit(request, pk):
 
 
 @login_required
-@require_http_methods(["POST"])
 def gerar_rodadas(request, campeonato_id):
     """Gera automaticamente as rodadas de um campeonato"""
     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
 
-    try:
-        if campeonato.tipo == 'pontos_corridos':
-            CampeonatoService.gerar_rodadas_pontos_corridos(campeonato)
-        else:
-            CampeonatoService.gerar_rodadas_grupos(campeonato)
+    if request.method == 'POST':
+        try:
+            if campeonato.tipo == 'pontos_corridos':
+                CampeonatoService.gerar_rodadas_pontos_corridos(campeonato)
+            else:
+                CampeonatoService.gerar_rodadas_grupos(campeonato)
 
-        messages.success(request, 'Rodadas geradas com sucesso!')
-    except ValueError as e:
-        messages.error(request, str(e))
+            messages.success(request, 'Rodadas geradas com sucesso!')
+            return redirect('campeonato_detail', pk=campeonato.pk)
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect('configuracao_rodada', campeonato_id=campeonato.id)
 
-    return redirect('campeonato_detail', pk=campeonato.pk)
+    # GET - Mostrar página de confirmação
+    context = {
+        'campeonato': campeonato,
+    }
+    return render(request, 'campeonatos/gerar_rodadas.html', context)
 
 
 @login_required
@@ -458,18 +471,32 @@ def partidas_list(request):
     return render(request, 'campeonatos/partidas_list.html', context)
 
 
-# NOTA: Estas funções foram comentadas pois usavam ConfiguracaoRodada que foi removido
-# TODO: Refatorar para usar as configurações que agora estão no modelo Campeonato
+# Views de Configuração e Gerenciamento de Rodadas
 
-# def configuracao_rodada(request, campeonato_id):
-#     """Configuração de rodadas para um campeonato"""
-#     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
-#     # Implementação será refatorada...
+def configuracao_rodada(request, campeonato_id):
+    """Configuração de rodadas para um campeonato"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
 
-# def gerar_rodadas(request, campeonato_id):
-#     """Gera rodadas baseadas na configuração do campeonato"""
-#     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
-#     # Implementação será refatorada...
+    if request.method == 'POST':
+        form = ConfiguracaoRodadaForm(request.POST, instance=campeonato)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, 'Configuração de rodadas salva com sucesso!')
+
+            # Se o usuário clicou em "Salvar e Gerar Rodadas"
+            if 'gerar_rodadas' in request.POST:
+                return redirect('gerar_rodadas', campeonato_id=campeonato.id)
+
+            return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
+    else:
+        form = ConfiguracaoRodadaForm(instance=campeonato)
+
+    context = {
+        'campeonato': campeonato,
+        'form': form,
+    }
+    return render(request, 'campeonatos/configuracao_rodada.html', context)
 
 
 def gerenciar_rodadas(request, campeonato_id):
@@ -525,7 +552,8 @@ def adicionar_partida_manual(request, campeonato_id, rodada_id):
                     equipe_visitante=form.cleaned_data['equipe_visitante'],
                     local=form.cleaned_data.get('local'),
                     data_hora=form.cleaned_data.get('data_hora'),
-                    duracao_prevista=form.cleaned_data.get('duracao_prevista', 90),
+                    duracao_prevista=form.cleaned_data.get(
+                        'duracao_prevista', 90),
                     arbitro=form.cleaned_data.get('arbitro')
                 )
                 messages.success(
@@ -538,7 +566,8 @@ def adicionar_partida_manual(request, campeonato_id, rodada_id):
         # Pré-preencher data com a data da rodada
         if rodada.data_inicio:
             from datetime import datetime, time
-            form.fields['data_hora'].initial = datetime.combine(rodada.data_inicio, time(15, 0))
+            form.fields['data_hora'].initial = datetime.combine(
+                rodada.data_inicio, time(15, 0))
 
     # Obter partidas disponíveis para mostrar opções
     partidas_disponiveis = RodadaService.obter_partidas_disponiveis_para_rodada(

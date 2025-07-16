@@ -42,8 +42,8 @@ campeonato.nome }}{% endblock title %} {% block content %}
                 >
                   {{ form.tipo_geracao_rodada.label }}
                 </label>
-                {{ form.tipo_geracao_rodada }} 
-				{% if form.tipo_geracao_rodada.errors %}
+                {{ form.tipo_geracao_rodada }} {% if
+                form.tipo_geracao_rodada.errors %}
                 <div class="invalid-feedback d-block">
                   {{ form.tipo_geracao_rodada.errors.0 }}
                 </div>
@@ -60,8 +60,8 @@ campeonato.nome }}{% endblock title %} {% block content %}
                 >
                   {{ form.partidas_por_rodada.label }}
                 </label>
-                {{ form.partidas_por_rodada }} 
-				{% if form.partidas_por_rodada.errors %}
+                {{ form.partidas_por_rodada }} {% if
+                form.partidas_por_rodada.errors %}
                 <div class="invalid-feedback d-block">
                   {{ form.partidas_por_rodada.errors.0 }}
                 </div>
@@ -80,8 +80,8 @@ campeonato.nome }}{% endblock title %} {% block content %}
                 >
                   {{ form.dias_entre_rodadas.label }}
                 </label>
-                {{ form.dias_entre_rodadas }} 
-				{% if form.dias_entre_rodadas.errors %}
+                {{ form.dias_entre_rodadas }} {% if
+                form.dias_entre_rodadas.errors %}
                 <div class="invalid-feedback d-block">
                   {{ form.dias_entre_rodadas.errors.0 }}
                 </div>
@@ -98,8 +98,7 @@ campeonato.nome }}{% endblock title %} {% block content %}
                 >
                   {{ form.data_inicio.label }}
                 </label>
-                {{ form.data_inicio }} 
-				{% if form.data_inicio.errors %}
+                {{ form.data_inicio }} {% if form.data_inicio.errors %}
                 <div class="invalid-feedback d-block">
                   {{ form.data_inicio.errors.0 }}
                 </div>

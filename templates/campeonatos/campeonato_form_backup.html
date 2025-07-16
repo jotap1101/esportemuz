@@ -1,0 +1,682 @@
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}{{ title }} - EsporteMuz{% endblock title %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold text-primary">
+                    <i class="bi bi-trophy-fill me-3"></i>
+                    {{ title }}
+                </h1>
+                <p class="lead text-muted">Preencha os dados do campeonato</p>
+            </div>
+            <a href="{% url 'campeonatos_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>
+                Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-form-text me-2"></i>
+                    Dados do Campeonato
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" class="needs-validation" novalidate>
+                    {% csrf_token %}
+
+                    <!-- Exibir erros gerais do formulário -->
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        <h6 class="alert-heading">Erro no formulário:</h6>
+                        {% for error in form.non_field_errors %}
+                        <p class="mb-0">{{ error }}</p>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Informações básicas -->
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.nome.id_for_label }}" class="form-label">
+                                Nome do Campeonato
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.nome }}
+                            {% if form.nome.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.nome.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.ano.id_for_label }}" class="form-label">
+                                Ano
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.ano }}
+                            {% if form.ano.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.ano.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <label for="{{ form.descricao.id_for_label }}" class="form-label">
+                                Descrição
+                            </label>
+                            {{ form.descricao }}
+                            {% if form.descricao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.descricao.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Tipo de campeonato -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                                Tipo de Campeonato
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tipo.errors.0 }}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">
+                                <strong>Pontos Corridos:</strong> Todos contra todos<br>
+                                <strong>Grupos + Mata-mata:</strong> Fase de grupos seguida de eliminatórias
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-3" id="gruposConfig" style="display: none">
+                            <label for="{{ form.numero_grupos.id_for_label }}" class="form-label">
+                                Número de Grupos
+                            </label>
+                            {{ form.numero_grupos }}
+                            {% if form.numero_grupos.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.numero_grupos.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Detalhes dos grupos (apenas para grupos + mata-mata) -->
+                    <div class="row" id="gruposDetalhes" style="display: none">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.times_por_grupo.id_for_label }}" class="form-label">
+                                Times por Grupo
+                            </label>
+                            {{ form.times_por_grupo }}
+                            {% if form.times_por_grupo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.times_por_grupo.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.classificados_por_grupo.id_for_label }}" class="form-label">
+                                Classificados por Grupo
+                            </label>
+                            {{ form.classificados_por_grupo }}
+                            {% if form.classificados_por_grupo.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.classificados_por_grupo.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Fase mata-mata (apenas para grupos + mata-mata) -->
+                    <div class="row" id="faseMataMataRow" style="display: none">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.fase_inicial_mata_mata.id_for_label }}" class="form-label">
+                                Fase Inicial do Mata-mata
+                            </label>
+                            {{ form.fase_inicial_mata_mata }}
+                            {% if form.fase_inicial_mata_mata.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.fase_inicial_mata_mata.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.classificacao_inicial.id_for_label }}" class="form-label">
+                                Classificação Inicial
+                            </label>
+                            {{ form.classificacao_inicial }}
+                            {% if form.classificacao_inicial.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.classificacao_inicial.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Localização e datas -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.local_padrao.id_for_label }}" class="form-label">
+                                Local Padrão
+                            </label>
+                            {{ form.local_padrao }}
+                            {% if form.local_padrao.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.local_padrao.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.data_inicio.id_for_label }}" class="form-label">
+                                Data de Início
+                            </label>
+                            {{ form.data_inicio }}
+                            {% if form.data_inicio.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.data_inicio.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.data_fim_prevista.id_for_label }}" class="form-label">
+                                Data de Fim Prevista
+                            </label>
+                            {{ form.data_fim_prevista }}
+                            {% if form.data_fim_prevista.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.data_fim_prevista.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.max_equipes.id_for_label }}" class="form-label">
+                                Máximo de Equipes
+                            </label>
+                            {{ form.max_equipes }}
+                            {% if form.max_equipes.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.max_equipes.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Configurações de rodadas -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.tipo_geracao_rodada.id_for_label }}" class="form-label">
+                                Tipo de Geração de Rodadas
+                            </label>
+                            {{ form.tipo_geracao_rodada }}
+                            {% if form.tipo_geracao_rodada.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tipo_geracao_rodada.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.partidas_por_rodada.id_for_label }}" class="form-label">
+                                Partidas por Rodada
+                            </label>
+                            {{ form.partidas_por_rodada }}
+                            {% if form.partidas_por_rodada.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.partidas_por_rodada.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.dias_entre_rodadas.id_for_label }}" class="form-label">
+                                Dias entre Rodadas
+                            </label>
+                            {{ form.dias_entre_rodadas }}
+                            {% if form.dias_entre_rodadas.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.dias_entre_rodadas.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                {{ form.permite_empate }}
+                                <label for="{{ form.permite_empate.id_for_label }}" class="form-check-label">
+                                    Permite Empate
+                                </label>
+                            </div>
+                            {% if form.permite_empate.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.permite_empate.errors.0 }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botões -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'campeonatos_list' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {% if campeonato %}
+                                        Atualizar
+                                    {% else %}
+                                        Criar
+                                    {% endif %}
+                                    Campeonato
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const tipoSelect = document.getElementById("{{ form.tipo.id_for_label }}");
+    const gruposConfig = document.getElementById("gruposConfig");
+    const gruposDetalhes = document.getElementById("gruposDetalhes");
+    const faseMataMataRow = document.getElementById("faseMataMataRow");
+
+    function toggleGruposConfig() {
+        if (tipoSelect.value === "grupos_mata_mata") {
+            gruposConfig.style.display = "block";
+            gruposDetalhes.style.display = "flex";
+            faseMataMataRow.style.display = "flex";
+        } else {
+            gruposConfig.style.display = "none";
+            gruposDetalhes.style.display = "none";
+            faseMataMataRow.style.display = "none";
+        }
+    }
+
+    // Initial state
+    toggleGruposConfig();
+
+    // On change
+    tipoSelect.addEventListener("change", toggleGruposConfig);
+});
+</script>
+{% endblock extra_js %}
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="{{ form.local_padrao.id_for_label }}" class="form-label">
+                Local Padrão
+              </label>
+              {{ form.local_padrao }}
+              {% if form.local_padrao.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.local_padrao.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label for="{{ form.data_fim_prevista.id_for_label }}" class="form-label">
+                Data de Fim Prevista
+              </label>
+              {{ form.data_fim_prevista }}
+              {% if form.data_fim_prevista.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.data_fim_prevista.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="{{ form.max_equipes.id_for_label }}" class="form-label">
+                Máximo de Equipes
+              </label>
+              {{ form.max_equipes }}
+              {% if form.max_equipes.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.max_equipes.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <div class="form-check mt-4">
+                {{ form.permite_empate }}
+                <label for="{{ form.permite_empate.id_for_label }}" class="form-check-label">
+                  Permite Empate
+                </label>
+              </div>
+              {% if form.permite_empate.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.permite_empate.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.tipo_geracao_rodada.id_for_label }}"
+                class="form-label"
+              >
+                Tipo de Geração de Rodadas
+              </label>nt-between align-items-center">
+      <div>
+        <h1 class="display-5 fw-bold text-primary">
+          <i class="bi bi-trophy-fill me-3"></i>
+          {{ title }}
+        </h1>
+        <p class="lead text-muted">Preencha os dados do campeonato</p>
+      </div>
+      <a href="{% url 'campeonatos_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>
+        Voltar
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-form-text me-2"></i>
+          Dados do Campeonato
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="post" class="needs-validation" novalidate>
+          {% csrf_token %}
+
+          <!-- Exibir erros gerais do formulário -->
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger" role="alert">
+            <h6 class="alert-heading">Erro no formulário:</h6>
+            {% for error in form.non_field_errors %}
+            <p class="mb-0">{{ error }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="row">
+            <div class="col-md-8 mb-3">
+              <label for="{{ form.nome.id_for_label }}" class="form-label">
+                Nome do Campeonato
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.nome }} {% if form.nome.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.nome.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-4 mb-3">
+              <label for="{{ form.ano.id_for_label }}" class="form-label">
+                Ano
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.ano }} {% if form.ano.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.ano.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                Tipo de Campeonato
+                <span class="text-danger">*</span>
+              </label>
+              {{ form.tipo }} {% if form.tipo.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.tipo.errors.0 }}
+              </div>
+              {% endif %}
+              <div class="form-text">
+                <strong> Pontos Corridos: </strong>
+                Todos contra todos
+                <br />
+                <strong> Grupos + Mata-mata: </strong>
+                Fase de grupos seguida de eliminatórias
+              </div>
+            </div>
+
+            <div class="col-md-6 mb-3" id="gruposConfig" style="display: none">
+              <label
+                for="{{ form.numero_grupos.id_for_label }}"
+                class="form-label"
+              >
+                Número de Grupos
+              </label>
+              {{ form.numero_grupos }} {% if form.numero_grupos.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.numero_grupos.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row" id="gruposDetalhes" style="display: none">
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.times_por_grupo.id_for_label }}"
+                class="form-label"
+              >
+                Times por Grupo
+              </label>
+              {{ form.times_por_grupo }} {% if form.times_por_grupo.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.times_por_grupo.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.classificados_por_grupo.id_for_label }}"
+                class="form-label"
+              >
+                Classificados por Grupo
+              </label>
+              {{ form.classificados_por_grupo }} 
+              {% if form.classificados_por_grupo.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.classificados_por_grupo.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row" id="faseMataMataRow" style="display: none">
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.fase_inicial_mata_mata.id_for_label }}"
+                class="form-label"
+              >
+                Fase Inicial do Mata-mata
+              </label>
+              {{ form.fase_inicial_mata_mata }}
+              {% if form.fase_inicial_mata_mata.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.fase_inicial_mata_mata.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.classificacao_inicial.id_for_label }}"
+                class="form-label"
+              >
+                Classificação Inicial
+              </label>
+              {{ form.classificacao_inicial }}
+              {% if form.classificacao_inicial.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.classificacao_inicial.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Campos para todos os tipos de campeonato -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.tipo_geracao_rodada.id_for_label }}"
+                class="form-label"
+              >
+                Tipo de Geração de Rodadas
+              </label>
+              {{ form.tipo_geracao_rodada }}
+              {% if form.tipo_geracao_rodada.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.tipo_geracao_rodada.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.partidas_por_rodada.id_for_label }}"
+                class="form-label"
+              >
+                Partidas por Rodada
+              </label>
+              {{ form.partidas_por_rodada }}
+              {% if form.partidas_por_rodada.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.partidas_por_rodada.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.dias_entre_rodadas.id_for_label }}"
+                class="form-label"
+              >
+                Dias entre Rodadas
+              </label>
+              {{ form.dias_entre_rodadas }}
+              {% if form.dias_entre_rodadas.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.dias_entre_rodadas.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label
+                for="{{ form.data_inicio.id_for_label }}"
+                class="form-label"
+              >
+                Data de Início
+              </label>
+              {{ form.data_inicio }}
+              {% if form.data_inicio.errors %}
+              <div class="invalid-feedback d-block">
+                {{ form.data_inicio.errors.0 }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="row mt-4">
+            <div class="col-12">
+              <div class="d-flex justify-content-between">
+                <a
+                  href="{% url 'campeonatos_list' %}"
+                  class="btn btn-outline-secondary"
+                >
+                  <i class="bi bi-x-circle me-1"></i>
+                  Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                  <i class="bi bi-check-circle me-1"></i>
+                  {% if campeonato %} Atualizar {% else %} Criar {% endif %}
+                  Campeonato
+                </button>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %} {% block extra_js %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const tipoSelect = document.getElementById("{{ form.tipo.id_for_label }}");
+    const gruposConfig = document.getElementById("gruposConfig");
+    const gruposDetalhes = document.getElementById("gruposDetalhes");
+    const faseMataMataRow = document.getElementById("faseMataMataRow");
+
+    function toggleGruposConfig() {
+      if (tipoSelect.value === "grupos_mata_mata") {
+        gruposConfig.style.display = "block";
+        gruposDetalhes.style.display = "flex";
+        faseMataMataRow.style.display = "flex";
+      } else {
+        gruposConfig.style.display = "none";
+        gruposDetalhes.style.display = "none";
+        faseMataMataRow.style.display = "none";
+      }
+    }
+
+    // Initial state
+    toggleGruposConfig();
+
+    // On change
+    tipoSelect.addEventListener("change", toggleGruposConfig);
+  });
+</script>
+{% endblock extra_js %}
