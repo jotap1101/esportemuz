@@ -1,618 +1,783 @@
 {% extends 'base.html' %}
+
 {% load static %}
 
-{% block title %}{{ campeonato.nome }} - EsporteMuz{% endblock %}
+{% block title %}{{ campeonato.nome }} - EsporteMuz{% endblock %} 
 
 {% block content %}
 <div class="row mb-4">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="display-5 fw-bold text-primary">
-                    <i class="bi bi-trophy-fill me-3"></i>{{ campeonato.nome }}
-                </h1>
-                <div class="d-flex align-items-center gap-3 mt-2">
-                    <span class="badge bg-{% if campeonato.status == 'em_andamento' %}success{% elif campeonato.status == 'finalizado' %}secondary{% else %}warning{% endif %} fs-6">
-                        {{ campeonato.get_status_display }}
-                    </span>
-                    <span class="text-muted">{{ campeonato.ano }}</span>
-                    <span class="text-muted">{{ campeonato.get_tipo_display }}</span>
-                </div>
-            </div>
-            
-            {% if user.is_authenticated %}
-            <div class="d-flex gap-2">
-                <a href="{% url 'campeonato_edit' campeonato.pk %}" class="btn btn-outline-primary">
-                    <i class="bi bi-pencil me-1"></i>Editar
-                </a>
-                {% if campeonato.total_equipes >= 2 and campeonato.rodada_set.count == 0 %}
-                <button onclick="EsporteMuz.generateRounds({{ campeonato.pk }})" class="btn btn-success">
-                    <i class="bi bi-gear me-1"></i>Gerar Rodadas
-                </button>
-                {% endif %}
-                <form method="post" action="{% url 'campeonato_delete' campeonato.pk %}" style="display:inline;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este campeonato? Esta ação não pode ser desfeita.');">
-                        <i class="bi bi-trash me-1"></i>Excluir
-                    </button>
-                </form>
-            </div>
-            {% endif %}
-        </div>
-    </div>
+  	<div class="col-12">
+		<div class="d-flex justify-content-between align-items-center">
+	  		<div>
+				<h1 class="display-5 fw-bold text-primary">
+		  			<i class="bi bi-trophy-fill me-3"></i>
+					{{ campeonato.nome }}
+				</h1>
+				<div class="d-flex align-items-center gap-3 mt-2">
+		  			<span class="badge bg-{% if campeonato.status == 'em_andamento' %}success{% elif campeonato.status == 'finalizado' %}secondary{% else %}warning{% endif %} fs-6">
+						{{ campeonato.get_status_display }}
+		  			</span>
+		  			<span class="text-muted">
+						{{ campeonato.ano }}
+					</span>
+		  			<span class="text-muted">
+						{{ campeonato.get_tipo_display }}
+					</span>
+				</div>
+			</div>
+
+	  		{% if user.is_authenticated %}
+	  			<div class="d-flex gap-2">
+					<a href="{% url 'campeonato_edit' campeonato.pk %}" class="btn btn-outline-primary">
+						<i class="bi bi-pencil me-1"></i>
+						Editar
+					</a>
+
+					<!-- Gerenciamento de Rodadas -->
+					<div class="btn-group" role="group">
+						<button type="button" class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+							<i class="bi bi-calendar-event me-1"></i>Rodadas
+						</button>
+						<ul class="dropdown-menu">
+							<li>
+								<a class="dropdown-item" href="{% url 'configuracao_rodada' campeonato.pk %}">
+									<i class="fas fa-cogs me-2"></i>
+									Configurar Rodadas
+								</a>
+							</li>
+							<li>
+								<a class="dropdown-item" href="{% url 'gerenciar_rodadas' campeonato.pk %}">
+									<i class="fas fa-tasks me-2"></i>
+									Gerenciar Rodadas
+								</a>
+							</li>
+							{% if campeonato.total_equipes >= 2 %}
+								<li>
+									<hr class="dropdown-divider" />
+								</li>
+								<li>
+									<a class="dropdown-item" href="{% url 'gerar_rodadas' campeonato.pk %}">
+										<i class="fas fa-play me-2"></i>
+										Gerar Rodadas
+									</a>
+								</li>
+							{% endif %}
+						</ul>
+					</div>
+					<form method="post" action="{% url 'campeonato_delete' campeonato.pk %}" style="display: inline">
+						{% csrf_token %}
+						<button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este campeonato? Esta ação não pode ser desfeita.');">
+							<i class="bi bi-trash me-1"></i>
+							Excluir
+						</button>
+					</form>
+	  			</div>
+	  		{% endif %}
+		</div>
+  	</div>
 </div>
 
 <!-- Navigation Tabs -->
 <div class="row mb-4">
-    <div class="col-12">
-        <ul class="nav nav-tabs" id="campeonatoTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba == 'info' %}active{% endif %}" 
-                   href="{% url 'campeonato_detail' campeonato.pk %}?aba=info">
-                    <i class="bi bi-info-circle me-1"></i>Informações
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba == 'equipes' %}active{% endif %}" 
-                   href="{% url 'campeonato_detail' campeonato.pk %}?aba=equipes">
-                    <i class="bi bi-people me-1"></i>Equipes ({{ campeonato.total_equipes }})
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba == 'classificacao' %}active{% endif %}" 
-                   href="{% url 'campeonato_detail' campeonato.pk %}?aba=classificacao">
-                    <i class="bi bi-list-ol me-1"></i>Classificação
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link {% if aba == 'partidas' %}active{% endif %}" 
-                   href="{% url 'campeonato_detail' campeonato.pk %}?aba=partidas">
-                    <i class="bi bi-calendar-event me-1"></i>Partidas
-                </a>
-            </li>
-        </ul>
-    </div>
+  <div class="col-12">
+	<ul class="nav nav-tabs" id="campeonatoTabs" role="tablist">
+	  <li class="nav-item" role="presentation">
+		<a
+		  class="nav-link {% if aba == 'info' %}active{% endif %}"
+		  href="{% url 'campeonato_detail' campeonato.pk %}?aba=info"
+		>
+		  <i class="bi bi-info-circle me-1"></i>
+		  Informações
+		</a>
+	  </li>
+	  <li class="nav-item" role="presentation">
+		<a
+		  class="nav-link {% if aba == 'equipes' %}active{% endif %}"
+		  href="{% url 'campeonato_detail' campeonato.pk %}?aba=equipes"
+		>
+		  <i class="bi bi-people me-1"></i>Equipes 
+		  ({{ campeonato.total_equipes }})
+		</a>
+	  </li>
+	  <li class="nav-item" role="presentation">
+		<a
+		  class="nav-link {% if aba == 'classificacao' %}active{% endif %}"
+		  href="{% url 'campeonato_detail' campeonato.pk %}?aba=classificacao"
+		>
+		  <i class="bi bi-list-ol me-1"></i>Classificação
+		</a>
+	  </li>
+	  <li class="nav-item" role="presentation">
+		<a
+		  class="nav-link {% if aba == 'partidas' %}active{% endif %}"
+		  href="{% url 'campeonato_detail' campeonato.pk %}?aba=partidas"
+		>
+		  <i class="bi bi-calendar-event me-1"></i>Partidas
+		</a>
+	  </li>
+	</ul>
+  </div>
 </div>
 
 <!-- Tab Content -->
 <div class="tab-content">
-    {% if aba == 'info' %}
-    <!-- Informações -->
-    <div class="row">
-        <div class="col-lg-8 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-info-circle me-2"></i>Detalhes do Campeonato
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <strong>Nome:</strong><br>
-                            <span class="text-muted">{{ campeonato.nome }}</span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Ano:</strong><br>
-                            <span class="text-muted">{{ campeonato.ano }}</span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Tipo:</strong><br>
-                            <span class="text-muted">{{ campeonato.get_tipo_display }}</span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Status:</strong><br>
-                            <span class="badge bg-{% if campeonato.status == 'em_andamento' %}success{% elif campeonato.status == 'finalizado' %}secondary{% else %}warning{% endif %}">
-                                {{ campeonato.get_status_display }}
-                            </span>
-                        </div>
-                        {% if campeonato.tipo == 'grupos_mata_mata' %}
-                        <div class="col-md-6 mb-3">
-                            <strong>Número de Grupos:</strong><br>
-                            <span class="text-muted">{{ campeonato.numero_grupos }}</span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Times por Grupo:</strong><br>
-                            <span class="text-muted">{{ campeonato.times_por_grupo }}</span>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <strong>Classificados por Grupo:</strong><br>
-                            <span class="text-muted">{{ campeonato.classificados_por_grupo }}</span>
-                        </div>
-                        {% endif %}
-                        <div class="col-md-6 mb-3">
-                            <strong>Criado em:</strong><br>
-                            <span class="text-muted">{{ campeonato.criado_em|date:"d/m/Y H:i" }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-lg-4 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-graph-up me-2"></i>Estatísticas
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between mb-3">
-                        <span>Equipes:</span>
-                        <strong>{{ campeonato.total_equipes }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3">
-                        <span>Rodadas:</span>
-                        <strong>{{ campeonato.rodada_set.count }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3">
-                        <span>Total de Partidas:</span>
-                        <strong>{{ campeonato.partida_set.count }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between mb-3">
-                        <span>Partidas Realizadas:</span>
-                        <strong>{{ campeonato.partida_set.finalizadas.count }}</strong>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span>Partidas Pendentes:</span>
-                        <strong>{{ campeonato.partida_set.pendentes.count }}</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    {% elif aba == 'equipes' %}
-    <!-- Equipes -->
-    <div class="row mb-3">
-        <div class="col-12">
-            {% if user.is_authenticated %}
-            <button class="btn btn-primary btn-add-team" data-championship-id="{{ campeonato.pk }}">
-                <i class="bi bi-plus-lg me-1"></i>Adicionar Equipe
-            </button>
-            {% endif %}
-        </div>
-    </div>
-    
-    <div class="row">
-        {% if participacoes %}
-            {% for participacao in participacoes %}
-            <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
-                <div class="card text-center">
-                    <div class="card-body">
-                        {% if participacao.equipe.escudo %}
-                            <img src="{{ participacao.equipe.escudo.url }}" alt="{{ participacao.equipe.nome }}" 
-                                 class="team-logo-lg mb-3">
-                        {% else %}
-                            <div class="team-logo-lg bg-light d-flex align-items-center justify-content-center mb-3 mx-auto">
-                                <i class="bi bi-shield text-muted"></i>
-                            </div>
-                        {% endif %}
-                        
-                        <h6 class="card-title">{{ participacao.equipe.nome }}</h6>
-                        <p class="card-text">
-                            <small class="text-muted">{{ participacao.equipe.cidade }}</small>
-                            {% if participacao.grupo %}
-                                <br><span class="badge bg-secondary">Grupo {{ participacao.grupo }}</span>
-                            {% endif %}
-                        </p>
-                        
-                        <div class="btn-group w-100" role="group">
-                            <a href="{% url 'equipe_edit' participacao.equipe.pk %}" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            {% if user.is_authenticated %}
-                            <button class="btn btn-outline-danger btn-sm" 
-                                    onclick="removeTeam({{ participacao.pk }})">
-                                <i class="bi bi-trash"></i>
-                            </button>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-            <div class="col-12">
-                <div class="empty-state">
-                    <i class="bi bi-people"></i>
-                    <h4>Nenhuma equipe inscrita</h4>
-                    <p>Adicione equipes para começar o campeonato.</p>
-                    {% if user.is_authenticated %}
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addTeamModal">
-                        <i class="bi bi-plus-lg me-2"></i>Adicionar Primeira Equipe
-                    </button>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
-    </div>
-    
-    {% elif aba == 'classificacao' %}
-    <!-- Classificação -->
-    {% if campeonato.tipo == 'grupos_mata_mata' and classificacao_grupos %}
-        {% for grupo, classificacao in classificacao_grupos.items %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-collection me-2"></i>Grupo {{ grupo }}
-                        </h5>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 classification-table" id="classification-table-{{ grupo }}">
-                                <thead>
-                                    <tr>
-                                        <th>Pos</th>
-                                        <th>Equipe</th>
-                                        <th>Pts</th>
-                                        <th>J</th>
-                                        <th>V</th>
-                                        <th>E</th>
-                                        <th>D</th>
-                                        <th>GP</th>
-                                        <th>GC</th>
-                                        <th>SG</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in classificacao %}
-                                    <tr {% if forloop.counter <= campeonato.classificados_por_grupo %}class="qualified"{% endif %}>
-                                        <td class="position">{{ forloop.counter }}</td>
-                                        <td class="team-name">
-                                            {% if item.equipe.escudo %}
-                                                <img src="{{ item.equipe.escudo.url }}" alt="{{ item.equipe.nome }}" 
-                                                     class="team-logo-sm me-2">
-                                            {% endif %}
-                                            {{ item.equipe.nome }}
-                                        </td>
-                                        <td><strong>{{ item.pontos }}</strong></td>
-                                        <td>{{ item.jogos }}</td>
-                                        <td>{{ item.vitorias }}</td>
-                                        <td>{{ item.empates }}</td>
-                                        <td>{{ item.derrotas }}</td>
-                                        <td>{{ item.gols_pro }}</td>
-                                        <td>{{ item.gols_contra }}</td>
-                                        <td>{{ item.saldo_gols }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% elif classificacao %}
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-list-ol me-2"></i>Classificação Geral
-                        </h5>
-                        <button onclick="EsporteMuz.refreshClassification({{ campeonato.pk }})" 
-                                class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Atualizar
-                        </button>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover mb-0 classification-table" id="classification-table">
-                                <thead>
-                                    <tr>
-                                        <th>Pos</th>
-                                        <th>Equipe</th>
-                                        <th>Pts</th>
-                                        <th>J</th>
-                                        <th>V</th>
-                                        <th>E</th>
-                                        <th>D</th>
-                                        <th>GP</th>
-                                        <th>GC</th>
-                                        <th>SG</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for item in classificacao %}
-                                    <tr>
-                                        <td class="position">{{ forloop.counter }}</td>
-                                        <td class="team-name">
-                                            {% if item.equipe.escudo %}
-                                                <img src="{{ item.equipe.escudo.url }}" alt="{{ item.equipe.nome }}" 
-                                                     class="team-logo-sm me-2">
-                                            {% endif %}
-                                            {{ item.equipe.nome }}
-                                        </td>
-                                        <td><strong>{{ item.pontos }}</strong></td>
-                                        <td>{{ item.jogos }}</td>
-                                        <td>{{ item.vitorias }}</td>
-                                        <td>{{ item.empates }}</td>
-                                        <td>{{ item.derrotas }}</td>
-                                        <td>{{ item.gols_pro }}</td>
-                                        <td>{{ item.gols_contra }}</td>
-                                        <td>{{ item.saldo_gols }}</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <i class="bi bi-list-ol"></i>
-            <h4>Classificação não disponível</h4>
-            <p>Adicione equipes e realize partidas para ver a classificação.</p>
-        </div>
-    {% endif %}
-    
-    {% elif aba == 'partidas' %}
-    <!-- Partidas -->
-    {% if campeonato.tipo == 'grupos_mata_mata' and rodadas_por_grupo %}
-        {% for grupo, rodadas in rodadas_por_grupo.items %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <h4 class="text-primary mb-3">
-                    <i class="bi bi-collection me-2"></i>
-                    {% if grupo == 'Mata-mata' %}
-                        Fase Mata-mata
-                    {% else %}
-                        Grupo {{ grupo }}
-                    {% endif %}
-                </h4>
-                
-                {% for rodada in rodadas %}
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-calendar-week me-2"></i>{{ rodada.nome }}
-                            {% if rodada.data_prevista %}
-                                <small class="text-muted ms-2">{{ rodada.data_prevista|date:"d/m/Y" }}</small>
-                            {% endif %}
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        {% if rodada.partida_set.all %}
-                            <div class="row">
-                                {% for partida in rodada.partida_set.all %}
-                                <div class="col-lg-6 mb-3">
-                                    <div class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex align-items-center">
-                                                    {% if partida.equipe_mandante.escudo %}
-                                                        <img src="{{ partida.equipe_mandante.escudo.url }}" 
-                                                             alt="{{ partida.equipe_mandante.nome }}" 
-                                                             class="team-logo me-2">
-                                                    {% endif %}
-                                                    <strong>{{ partida.equipe_mandante.nome }}</strong>
-                                                </div>
-                                                
-                                                {% if partida.status == 'finalizada' %}
-                                                    <div class="score-display">
-                                                        {{ partida.gols_mandante }} <span class="vs">x</span> {{ partida.gols_visitante }}
-                                                    </div>
-                                                {% else %}
-                                                    <div class="text-muted">vs</div>
-                                                {% endif %}
-                                                
-                                                <div class="d-flex align-items-center">
-                                                    <strong>{{ partida.equipe_visitante.nome }}</strong>
-                                                    {% if partida.equipe_visitante.escudo %}
-                                                        <img src="{{ partida.equipe_visitante.escudo.url }}" 
-                                                             alt="{{ partida.equipe_visitante.nome }}" 
-                                                             class="team-logo ms-2">
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                                <small class="text-muted">
-                                                    {% if partida.local %}
-                                                        <i class="bi bi-geo-alt me-1"></i>{{ partida.local }}
-                                                    {% endif %}
-                                                    {% if partida.data_hora %}
-                                                        <i class="bi bi-clock ms-2 me-1"></i>{{ partida.data_hora|date:"d/m H:i" }}
-                                                    {% endif %}
-                                                </small>
-                                                
-                                                {% if user.is_authenticated and partida.status == 'pendente' %}
-                                                    <button class="btn btn-primary btn-sm btn-register-result"
-                                                            data-match-id="{{ partida.pk }}"
-                                                            data-mandante="{{ partida.equipe_mandante.nome }}"
-                                                            data-visitante="{{ partida.equipe_visitante.nome }}">
-                                                        <i class="bi bi-plus me-1"></i>Resultado
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <div class="text-center text-muted py-3">
-                                <i class="bi bi-calendar-x"></i>
-                                <p class="mb-0">Nenhuma partida nesta rodada</p>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-        {% endfor %}
-    {% elif rodadas %}
-        {% for rodada in rodadas %}
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title mb-0">
-                            <i class="bi bi-calendar-week me-2"></i>{{ rodada.nome }}
-                            {% if rodada.data_prevista %}
-                                <small class="text-muted ms-2">{{ rodada.data_prevista|date:"d/m/Y" }}</small>
-                            {% endif %}
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        {% if rodada.partida_set.all %}
-                            <div class="row">
-                                {% for partida in rodada.partida_set.all %}
-                                <div class="col-lg-6 mb-3">
-                                    <div class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex align-items-center">
-                                                    {% if partida.equipe_mandante.escudo %}
-                                                        <img src="{{ partida.equipe_mandante.escudo.url }}" 
-                                                             alt="{{ partida.equipe_mandante.nome }}" 
-                                                             class="team-logo me-2">
-                                                    {% endif %}
-                                                    <strong>{{ partida.equipe_mandante.nome }}</strong>
-                                                </div>
-                                                
-                                                {% if partida.status == 'finalizada' %}
-                                                    <div class="score-display">
-                                                        {{ partida.gols_mandante }} <span class="vs">x</span> {{ partida.gols_visitante }}
-                                                    </div>
-                                                {% else %}
-                                                    <div class="text-muted">vs</div>
-                                                {% endif %}
-                                                
-                                                <div class="d-flex align-items-center">
-                                                    <strong>{{ partida.equipe_visitante.nome }}</strong>
-                                                    {% if partida.equipe_visitante.escudo %}
-                                                        <img src="{{ partida.equipe_visitante.escudo.url }}" 
-                                                             alt="{{ partida.equipe_visitante.nome }}" 
-                                                             class="team-logo ms-2">
-                                                    {% endif %}
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="d-flex justify-content-between align-items-center mt-2">
-                                                <small class="text-muted">
-                                                    {% if partida.local %}
-                                                        <i class="bi bi-geo-alt me-1"></i>{{ partida.local }}
-                                                    {% endif %}
-                                                    {% if partida.data_hora %}
-                                                        <i class="bi bi-clock ms-2 me-1"></i>{{ partida.data_hora|date:"d/m H:i" }}
-                                                    {% endif %}
-                                                </small>
-                                                
-                                                {% if user.is_authenticated and partida.status == 'pendente' %}
-                                                    <button class="btn btn-primary btn-sm btn-register-result"
-                                                            data-match-id="{{ partida.pk }}"
-                                                            data-mandante="{{ partida.equipe_mandante.nome }}"
-                                                            data-visitante="{{ partida.equipe_visitante.nome }}">
-                                                        <i class="bi bi-plus me-1"></i>Resultado
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        {% else %}
-                            <p class="text-muted">Nenhuma partida nesta rodada.</p>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
-        <div class="empty-state">
-            <i class="bi bi-calendar-event"></i>
-            <h4>Nenhuma rodada encontrada</h4>
-            <p>Gere as rodadas para começar o campeonato.</p>
-            {% if user.is_authenticated and campeonato.total_equipes >= 2 %}
-            <button onclick="EsporteMuz.generateRounds({{ campeonato.pk }})" class="btn btn-primary">
-                <i class="bi bi-gear me-2"></i>Gerar Rodadas
-            </button>
-            {% endif %}
-        </div>
-    {% endif %}
-    {% endif %}
+  {% if aba == 'info' %}
+  <!-- Informações -->
+  <div class="row">
+	<div class="col-lg-8 mb-4">
+	  <div class="card">
+		<div class="card-header">
+		  <h5 class="card-title mb-0">
+			<i class="bi bi-info-circle me-2"></i>Detalhes do Campeonato
+		  </h5>
+		</div>
+		<div class="card-body">
+		  <div class="row">
+			<div class="col-md-6 mb-3">
+			  <strong>Nome:</strong><br />
+			  <span class="text-muted">{{ campeonato.nome }}</span>
+			</div>
+			<div class="col-md-6 mb-3">
+			  <strong>Ano:</strong><br />
+			  <span class="text-muted">{{ campeonato.ano }}</span>
+			</div>
+			<div class="col-md-6 mb-3">
+			  <strong>Tipo:</strong><br />
+			  <span class="text-muted">{{ campeonato.get_tipo_display }}</span>
+			</div>
+			<div class="col-md-6 mb-3">
+			  <strong>Status:</strong><br />
+			  <span
+				class="badge bg-{% if campeonato.status == 'em_andamento' %}success{% elif campeonato.status == 'finalizado' %}secondary{% else %}warning{% endif %}"
+			  >
+				{{ campeonato.get_status_display }}
+			  </span>
+			</div>
+			{% if campeonato.tipo == 'grupos_mata_mata' %}
+			<div class="col-md-6 mb-3">
+			  <strong>Número de Grupos:</strong><br />
+			  <span class="text-muted">{{ campeonato.numero_grupos }}</span>
+			</div>
+			<div class="col-md-6 mb-3">
+			  <strong>Times por Grupo:</strong><br />
+			  <span class="text-muted">{{ campeonato.times_por_grupo }}</span>
+			</div>
+			<div class="col-md-6 mb-3">
+			  <strong>Classificados por Grupo:</strong><br />
+			  <span class="text-muted"
+				>{{ campeonato.classificados_por_grupo }}</span
+			  >
+			</div>
+			{% endif %}
+			<div class="col-md-6 mb-3">
+			  <strong>Criado em:</strong><br />
+			  <span class="text-muted"
+				>{{ campeonato.criado_em|date:"d/m/Y H:i" }}</span
+			  >
+			</div>
+		  </div>
+		</div>
+	  </div>
+	</div>
+
+	<div class="col-lg-4 mb-4">
+	  <div class="card">
+		<div class="card-header">
+		  <h5 class="card-title mb-0">
+			<i class="bi bi-graph-up me-2"></i>Estatísticas
+		  </h5>
+		</div>
+		<div class="card-body">
+		  <div class="d-flex justify-content-between mb-3">
+			<span>Equipes:</span>
+			<strong>{{ campeonato.total_equipes }}</strong>
+		  </div>
+		  <div class="d-flex justify-content-between mb-3">
+			<span>Rodadas:</span>
+			<strong>{{ campeonato.rodada_set.count }}</strong>
+		  </div>
+		  <div class="d-flex justify-content-between mb-3">
+			<span>Total de Partidas:</span>
+			<strong>{{ campeonato.partida_set.count }}</strong>
+		  </div>
+		  <div class="d-flex justify-content-between mb-3">
+			<span>Partidas Realizadas:</span>
+			<strong>{{ campeonato.partida_set.finalizadas.count }}</strong>
+		  </div>
+		  <div class="d-flex justify-content-between">
+			<span>Partidas Pendentes:</span>
+			<strong>{{ campeonato.partida_set.pendentes.count }}</strong>
+		  </div>
+		</div>
+	  </div>
+	</div>
+  </div>
+
+  {% elif aba == 'equipes' %}
+  <!-- Equipes -->
+  <div class="row mb-3">
+	<div class="col-12">
+	  {% if user.is_authenticated %}
+	  <button
+		class="btn btn-primary btn-add-team"
+		data-championship-id="{{ campeonato.pk }}"
+	  >
+		<i class="bi bi-plus-lg me-1"></i>Adicionar Equipe
+	  </button>
+	  {% endif %}
+	</div>
+  </div>
+
+  <div class="row">
+	{% if participacoes %} {% for participacao in participacoes %}
+	<div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+	  <div class="card text-center">
+		<div class="card-body">
+		  {% if participacao.equipe.escudo %}
+		  <img
+			src="{{ participacao.equipe.escudo.url }}"
+			alt="{{ participacao.equipe.nome }}"
+			class="team-logo-lg mb-3"
+		  />
+		  {% else %}
+		  <div
+			class="team-logo-lg bg-light d-flex align-items-center justify-content-center mb-3 mx-auto"
+		  >
+			<i class="bi bi-shield text-muted"></i>
+		  </div>
+		  {% endif %}
+
+		  <h6 class="card-title">{{ participacao.equipe.nome }}</h6>
+		  <p class="card-text">
+			<small class="text-muted">{{ participacao.equipe.cidade }}</small>
+			{% if participacao.grupo %}
+			<br /><span class="badge bg-secondary"
+			  >Grupo {{ participacao.grupo }}</span
+			>
+			{% endif %}
+		  </p>
+
+		  <div class="btn-group w-100" role="group">
+			<a
+			  href="{% url 'equipe_edit' participacao.equipe.pk %}"
+			  class="btn btn-outline-primary btn-sm"
+			>
+			  <i class="bi bi-eye"></i>
+			</a>
+			{% if user.is_authenticated %}
+			<button
+			  class="btn btn-outline-danger btn-sm"
+			  onclick="removeTeam({{ participacao.pk }})"
+			>
+			  <i class="bi bi-trash"></i>
+			</button>
+			{% endif %}
+		  </div>
+		</div>
+	  </div>
+	</div>
+	{% endfor %} {% else %}
+	<div class="col-12">
+	  <div class="empty-state">
+		<i class="bi bi-people"></i>
+		<h4>Nenhuma equipe inscrita</h4>
+		<p>Adicione equipes para começar o campeonato.</p>
+		{% if user.is_authenticated %}
+		<button
+		  class="btn btn-primary"
+		  data-bs-toggle="modal"
+		  data-bs-target="#addTeamModal"
+		>
+		  <i class="bi bi-plus-lg me-2"></i>Adicionar Primeira Equipe
+		</button>
+		{% endif %}
+	  </div>
+	</div>
+	{% endif %}
+  </div>
+
+  {% elif aba == 'classificacao' %}
+	<!-- Classificação -->
+	{% if campeonato.tipo == 'grupos_mata_mata' and classificacao_grupos %} 
+	{% for grupo, classificacao in classificacao_grupos.items %}
+	<div class="row mb-4">
+		<div class="col-12">
+		<div class="card">
+			<div class="card-header">
+			<h5 class="card-title mb-0">
+				<i class="bi bi-collection me-2"></i>Grupo {{ grupo }}
+			</h5>
+			</div>
+			<div class="card-body p-0">
+			<div class="table-responsive">
+				<table
+				class="table table-hover mb-0 classification-table"
+				id="classification-table-{{ grupo }}"
+				>
+				<thead>
+					<tr>
+					<th>Pos</th>
+					<th>Equipe</th>
+					<th>Pts</th>
+					<th>J</th>
+					<th>V</th>
+					<th>E</th>
+					<th>D</th>
+					<th>GP</th>
+					<th>GC</th>
+					<th>SG</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in classificacao %}
+					<tr
+					{%
+					if
+					forloop.counter
+					<="campeonato.classificados_por_grupo"
+					%}class="qualified"
+					{%
+					endif
+					%}
+					>
+					<td class="position">{{ forloop.counter }}</td>
+					<td class="team-name">
+						{% if item.equipe.escudo %}
+						<img
+						src="{{ item.equipe.escudo.url }}"
+						alt="{{ item.equipe.nome }}"
+						class="team-logo-sm me-2"
+						/>
+						{% endif %} {{ item.equipe.nome }}
+					</td>
+					<td><strong>{{ item.pontos }}</strong></td>
+					<td>{{ item.jogos }}</td>
+					<td>{{ item.vitorias }}</td>
+					<td>{{ item.empates }}</td>
+					<td>{{ item.derrotas }}</td>
+					<td>{{ item.gols_pro }}</td>
+					<td>{{ item.gols_contra }}</td>
+					<td>{{ item.saldo_gols }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		</div>
+	</div>
+	{% endfor %}
+	{% elif classificacao %}
+	<div class="row">
+		<div class="col-12">
+		<div class="card">
+			<div
+			class="card-header d-flex justify-content-between align-items-center"
+			>
+			<h5 class="card-title mb-0">
+				<i class="bi bi-list-ol me-2"></i>Classificação Geral
+			</h5>
+			<button
+				onclick="EsporteMuz.refreshClassification({{ campeonato.pk }})"
+				class="btn btn-outline-primary btn-sm"
+			>
+				<i class="bi bi-arrow-clockwise me-1"></i>Atualizar
+			</button>
+			</div>
+			<div class="card-body p-0">
+			<div class="table-responsive">
+				<table
+				class="table table-hover mb-0 classification-table"
+				id="classification-table"
+				>
+				<thead>
+					<tr>
+					<th>Pos</th>
+					<th>Equipe</th>
+					<th>Pts</th>
+					<th>J</th>
+					<th>V</th>
+					<th>E</th>
+					<th>D</th>
+					<th>GP</th>
+					<th>GC</th>
+					<th>SG</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for item in classificacao %}
+					<tr>
+					<td class="position">{{ forloop.counter }}</td>
+					<td class="team-name">
+						{% if item.equipe.escudo %}
+						<img
+						src="{{ item.equipe.escudo.url }}"
+						alt="{{ item.equipe.nome }}"
+						class="team-logo-sm me-2"
+						/>
+						{% endif %}
+						{{ item.equipe.nome }}
+					</td>
+					<td><strong>{{ item.pontos }}</strong></td>
+					<td>{{ item.jogos }}</td>
+					<td>{{ item.vitorias }}</td>
+					<td>{{ item.empates }}</td>
+					<td>{{ item.derrotas }}</td>
+					<td>{{ item.gols_pro }}</td>
+					<td>{{ item.gols_contra }}</td>
+					<td>{{ item.saldo_gols }}</td>
+					</tr>
+					{% endfor %}
+				</tbody>
+				</table>
+			</div>
+			</div>
+		</div>
+		</div>
+	</div>
+	{% else %}
+	<div class="empty-state">
+		<i class="bi bi-list-ol"></i>
+		<h4>Classificação não disponível</h4>
+		<p>Adicione equipes e realize partidas para ver a classificação.</p>
+	</div>
+	{% endif %}
+
+  {% elif aba == 'partidas' %}
+  <!-- Partidas -->
+	{% if campeonato.tipo == 'grupos_mata_mata' and rodadas_por_grupo %} 
+		{% for grupo, rodadas in rodadas_por_grupo.items %}
+			<div class="row mb-4">
+				<div class="col-12">
+				<h4 class="text-primary mb-3">
+					<i class="bi bi-collection me-2"></i>
+					{% if grupo == 'Mata-mata' %} Fase Mata-mata {% else %} Grupo {{ grupo
+					}} {% endif %}
+				</h4>
+
+				{% for rodada in rodadas %}
+				<div class="card mb-3">
+					<div class="card-header">
+					<h5 class="card-title mb-0">
+						<i class="bi bi-calendar-week me-2"></i>
+						{{ rodada.nome }}
+						{% if rodada.data_rodada %}
+							<small class="text-muted ms-2">{{ rodada.data_rodada|date:"d/m/Y" }}</small>
+						{% endif %}
+					</h5>
+					</div>
+					<div class="card-body">
+					{% if rodada.partida_set.all %}
+					<div class="row">
+						{% for partida in rodada.partida_set.all %}
+						<div class="col-lg-6 mb-3">
+						<div
+							class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}"
+						>
+							<div class="card-body">
+							<div
+								class="d-flex justify-content-between align-items-center"
+							>
+								<div class="d-flex align-items-center">
+								{% if partida.equipe_mandante.escudo %}
+								<img
+									src="{{ partida.equipe_mandante.escudo.url }}"
+									alt="{{ partida.equipe_mandante.nome }}"
+									class="team-logo me-2"
+								/>
+								{% endif %}
+								<strong>{{ partida.equipe_mandante.nome }}</strong>
+								</div>
+
+								{% if partida.status == 'finalizada' %}
+								<div class="score-display">
+								{{ partida.gols_mandante }} <span class="vs">x</span> {{
+								partida.gols_visitante }}
+								</div>
+								{% else %}
+								<div class="text-muted">vs</div>
+								{% endif %}
+
+								<div class="d-flex align-items-center">
+								<strong>{{ partida.equipe_visitante.nome }}</strong>
+								{% if partida.equipe_visitante.escudo %}
+								<img
+									src="{{ partida.equipe_visitante.escudo.url }}"
+									alt="{{ partida.equipe_visitante.nome }}"
+									class="team-logo ms-2"
+								/>
+								{% endif %}
+								</div>
+							</div>
+
+							<div
+								class="d-flex justify-content-between align-items-center mt-2"
+							>
+								<small class="text-muted">
+								{% if partida.local %}
+								<i class="bi bi-geo-alt me-1"></i>{{ partida.local }} {%
+								endif %} {% if partida.data_partida and partida.horario %}
+								<i class="bi bi-clock ms-2 me-1"></i>{{
+								partida.data_partida|date:"d/m" }} {{
+								partida.horario|time:"H:i" }} {% elif partida.data_partida
+								%} <i class="bi bi-clock ms-2 me-1"></i>{{
+								partida.data_partida|date:"d/m/Y" }} {% endif %}
+								</small>
+
+								{% if user.is_authenticated and partida.status == 'pendente'
+								%}
+								<button
+								class="btn btn-primary btn-sm btn-register-result"
+								data-match-id="{{ partida.pk }}"
+								data-mandante="{{ partida.equipe_mandante.nome }}"
+								data-visitante="{{ partida.equipe_visitante.nome }}"
+								>
+								<i class="bi bi-plus me-1"></i>Resultado
+								</button>
+								{% endif %}
+							</div>
+							</div>
+						</div>
+						</div>
+						{% endfor %}
+					</div>
+					{% else %}
+					<div class="text-center text-muted py-3">
+						<i class="bi bi-calendar-x"></i>
+						<p class="mb-0">Nenhuma partida nesta rodada</p>
+					</div>
+					{% endif %}
+					</div>
+				</div>
+				{% endfor %}
+				</div>
+			</div>
+		{% endfor %}
+	{% elif rodadas %}
+	{% for rodada in rodadas %}
+	<div class="row mb-4">
+		<div class="col-12">
+		<div class="card">
+			<div class="card-header">
+			<h5 class="card-title mb-0">
+				<i class="bi bi-calendar-week me-2"></i>
+				{{ rodada.nome }}
+				{% if rodada.data_rodada %}
+				<small class="text-muted ms-2">{{ rodada.data_rodada|date:"d/m/Y" }}</small>
+				{% endif %}
+			</h5>
+			</div>
+			<div class="card-body">
+				{% if rodada.partida_set.all %}
+					<div class="row">
+						{% for partida in rodada.partida_set.all %}
+							<div class="col-lg-6 mb-3">
+							<div
+								class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}"
+							>
+								<div class="card-body">
+								<div
+									class="d-flex justify-content-between align-items-center"
+								>
+									<div class="d-flex align-items-center">
+									{% if partida.equipe_mandante.escudo %}
+										<img
+											src="{{ partida.equipe_mandante.escudo.url }}"
+											alt="{{ partida.equipe_mandante.nome }}"
+											class="team-logo me-2"
+										/>
+									{% endif %}
+									<strong>{{ partida.equipe_mandante.nome }}</strong>
+									</div>
+
+									{% if partida.status == 'finalizada' %}
+										<div class="score-display">
+										{{ partida.gols_mandante }} <span class="vs">x</span> {{
+										partida.gols_visitante }}
+										</div>
+									{% else %}
+										<div class="text-muted">vs</div>
+									{% endif %}
+
+									<div class="d-flex align-items-center">
+									<strong>{{ partida.equipe_visitante.nome }}</strong>
+									{% if partida.equipe_visitante.escudo %}
+										<img
+											src="{{ partida.equipe_visitante.escudo.url }}"
+											alt="{{ partida.equipe_visitante.nome }}"
+											class="team-logo ms-2"
+										/>
+									{% endif %}
+									</div>
+								</div>
+
+								<div
+									class="d-flex justify-content-between align-items-center mt-2"
+								>
+									<small class="text-muted">
+										{% if partida.local %}
+											<i class="bi bi-geo-alt me-1"></i>
+											{{ partida.local }}
+										{% endif %}
+										{% if partida.data_partida and partida.horario %}
+											<i class="bi bi-clock ms-2 me-1"></i>
+											{{ partida.data_partida|date:"d/m" }} {{ partida.horario|time:"H:i" }} 
+										{% elif partida.data_partida %}
+											<i class="bi bi-clock ms-2 me-1"></i>
+											{{ partida.data_partida|date:"d/m/Y" }}
+										{% endif %}
+									</small>
+
+									{% if user.is_authenticated and partida.status == 'pendente' %}
+									<button
+									class="btn btn-primary btn-sm btn-register-result"
+									data-match-id="{{ partida.pk }}"
+									data-mandante="{{ partida.equipe_mandante.nome }}"
+									data-visitante="{{ partida.equipe_visitante.nome }}"
+									>
+									<i class="bi bi-plus me-1"></i>Resultado
+									</button>
+									{% endif %}
+								</div>
+								</div>
+							</div>
+							</div>
+						{% endfor %}
+					</div>
+				{% else %}
+				<p class="text-muted">Nenhuma partida nesta rodada.</p>
+				{% endif %}
+			</div>
+		</div>
+		</div>
+	</div>
+	{% endfor %}
+  {% else %}
+	<div class="empty-state">
+		<i class="bi bi-calendar-event"></i>
+		<h4>Nenhuma rodada encontrada</h4>
+		<p>Gere as rodadas para começar o campeonato.</p>
+		{% if user.is_authenticated and campeonato.total_equipes >= 2 %}
+			<button
+			onclick="EsporteMuz.generateRounds({{ campeonato.pk }})"
+			class="btn btn-primary"
+			>
+			<i class="bi bi-gear me-2"></i>Gerar Rodadas
+			</button>
+		{% endif %}
+	</div>
+  {% endif %} 
+  {% endif %}
 </div>
 
 <!-- Modal: Add Team -->
 <div class="modal fade" id="addTeamModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Adicionar Equipe ao Campeonato</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="addTeamForm">
-                    <input type="hidden" id="championshipId" name="campeonato_id" value="{{ campeonato.pk }}">
-                    <div class="mb-3">
-                        <label for="teamSelect" class="form-label">Selecionar Equipe</label>
-                        <select class="form-select" id="teamSelect" required>
-                            <option value="">Escolha uma equipe...</option>
-                            <!-- Options will be loaded via AJAX -->
-                        </select>
-                    </div>
-                    {% if campeonato.tipo == 'grupos_mata_mata' %}
-                    <div class="mb-3">
-                        <label for="groupSelect" class="form-label">Grupo</label>
-                        <select class="form-select" id="groupSelect">
-                            <option value="">Automático</option>
-                            <option value="A">Grupo A</option>
-                            <option value="B">Grupo B</option>
-                            <option value="C">Grupo C</option>
-                            <option value="D">Grupo D</option>
-                        </select>
-                    </div>
-                    {% endif %}
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-primary" id="addTeamBtn" disabled>Adicionar</button>
-            </div>
-        </div>
-    </div>
+  <div class="modal-dialog">
+	<div class="modal-content">
+	  <div class="modal-header">
+		<h5 class="modal-title">Adicionar Equipe ao Campeonato</h5>
+		<button
+		  type="button"
+		  class="btn-close"
+		  data-bs-dismiss="modal"
+		></button>
+	  </div>
+	  <div class="modal-body">
+		<form id="addTeamForm">
+		  <input
+			type="hidden"
+			id="championshipId"
+			name="campeonato_id"
+			value="{{ campeonato.pk }}"
+		  />
+		  <div class="mb-3">
+			<label for="teamSelect" class="form-label">Selecionar Equipe</label>
+			<select class="form-select" id="teamSelect" required>
+			  <option value="">Escolha uma equipe...</option>
+			  <!-- Options will be loaded via AJAX -->
+			</select>
+		  </div>
+		  {% if campeonato.tipo == 'grupos_mata_mata' %}
+		  <div class="mb-3">
+			<label for="groupSelect" class="form-label">Grupo</label>
+			<select class="form-select" id="groupSelect">
+			  <option value="">Automático</option>
+			  <option value="A">Grupo A</option>
+			  <option value="B">Grupo B</option>
+			  <option value="C">Grupo C</option>
+			  <option value="D">Grupo D</option>
+			</select>
+		  </div>
+		  {% endif %}
+		</form>
+	  </div>
+	  <div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+		  Cancelar
+		</button>
+		<button type="button" class="btn btn-primary" id="addTeamBtn" disabled>
+		  Adicionar
+		</button>
+	  </div>
+	</div>
+  </div>
 </div>
 
 <!-- Modal: Register Result -->
 <div class="modal fade" id="resultModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registrar Resultado</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="resultForm">
-                    <input type="hidden" id="matchId" name="matchId">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="golsMandante" class="form-label">Gols Mandante</label>
-                            <input type="number" class="form-control" id="golsMandante" name="golsMandante" 
-                                   min="0" max="50" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="golsVisitante" class="form-label">Gols Visitante</label>
-                            <input type="number" class="form-control" id="golsVisitante" name="golsVisitante" 
-                                   min="0" max="50" required>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" form="resultForm" class="btn btn-primary">Salvar Resultado</button>
-            </div>
-        </div>
-    </div>
+  <div class="modal-dialog">
+	<div class="modal-content">
+	  <div class="modal-header">
+		<h5 class="modal-title">Registrar Resultado</h5>
+		<button
+		  type="button"
+		  class="btn-close"
+		  data-bs-dismiss="modal"
+		></button>
+	  </div>
+	  <div class="modal-body">
+		<form id="resultForm">
+		  <input type="hidden" id="matchId" name="matchId" />
+		  <div class="row">
+			<div class="col-md-6 mb-3">
+			  <label for="golsMandante" class="form-label">Gols Mandante</label>
+			  <input
+				type="number"
+				class="form-control"
+				id="golsMandante"
+				name="golsMandante"
+				min="0"
+				max="50"
+				required
+			  />
+			</div>
+			<div class="col-md-6 mb-3">
+			  <label for="golsVisitante" class="form-label"
+				>Gols Visitante</label
+			  >
+			  <input
+				type="number"
+				class="form-control"
+				id="golsVisitante"
+				name="golsVisitante"
+				min="0"
+				max="50"
+				required
+			  />
+			</div>
+		  </div>
+		</form>
+	  </div>
+	  <div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+		  Cancelar
+		</button>
+		<button type="submit" form="resultForm" class="btn btn-primary">
+		  Salvar Resultado
+		</button>
+	  </div>
+	</div>
+  </div>
 </div>
 {% endblock %}

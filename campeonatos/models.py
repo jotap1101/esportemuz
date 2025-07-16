@@ -25,7 +25,7 @@ class Campeonato(models.Model):
         ('pontos_corridos', 'Pontos Corridos'),
         ('grupos_mata_mata', 'Grupos + Mata-mata'),
     ]
-    
+
     STATUS_CHOICES = [
         ('planejado', 'Planejado'),
         ('em_andamento', 'Em Andamento'),
@@ -33,14 +33,20 @@ class Campeonato(models.Model):
     ]
 
     nome = models.CharField(max_length=200)
-    ano = models.IntegerField(validators=[MinValueValidator(2020), MaxValueValidator(2030)])
-    tipo = models.CharField(max_length=20, choices=TIPO_CHOICES, default='pontos_corridos')
-    numero_grupos = models.IntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(8)])
-    times_por_grupo = models.IntegerField(default=8, validators=[MinValueValidator(2), MaxValueValidator(20)])
-    classificados_por_grupo = models.IntegerField(default=4, validators=[MinValueValidator(1), MaxValueValidator(10)])
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='planejado')
+    ano = models.IntegerField(
+        validators=[MinValueValidator(2020), MaxValueValidator(2030)])
+    tipo = models.CharField(
+        max_length=20, choices=TIPO_CHOICES, default='pontos_corridos')
+    numero_grupos = models.IntegerField(
+        default=1, validators=[MinValueValidator(1), MaxValueValidator(8)])
+    times_por_grupo = models.IntegerField(
+        default=8, validators=[MinValueValidator(2), MaxValueValidator(20)])
+    classificados_por_grupo = models.IntegerField(
+        default=4, validators=[MinValueValidator(1), MaxValueValidator(10)])
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='planejado')
     criado_em = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
         verbose_name = "Campeonato"
         verbose_name_plural = "Campeonatos"
@@ -56,14 +62,14 @@ class Campeonato(models.Model):
         """Atualiza automaticamente o status do campeonato"""
         partidas = Partida.objects.filter(rodada__campeonato=self)
         total_partidas = partidas.count()
-        
+
         if total_partidas == 0:
             self.status = 'planejado'
         elif partidas.filter(status='finalizada').count() == total_partidas:
             self.status = 'finalizado'
         else:
             self.status = 'em_andamento'
-        
+
         self.save()
 
 
@@ -75,8 +81,9 @@ class Participacao(models.Model):
 
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE)
     equipe = models.ForeignKey(Equipe, on_delete=models.CASCADE)
-    grupo = models.CharField(max_length=1, choices=GRUPOS_CHOICES, blank=True, null=True)
-    
+    grupo = models.CharField(
+        max_length=1, choices=GRUPOS_CHOICES, blank=True, null=True)
+
     class Meta:
         verbose_name = "Participação"
         verbose_name_plural = "Participações"
@@ -87,12 +94,38 @@ class Participacao(models.Model):
         return f"{self.equipe.nome} em {self.campeonato.nome}{grupo_str}"
 
 
+class ConfiguracaoRodada(models.Model):
+    TIPO_CONFIGURACAO_CHOICES = [
+        ('manual', 'Manual - Organizador escolhe as partidas'),
+        ('automatica', 'Automática - Sistema distribui aleatoriamente'),
+    ]
+
+    campeonato = models.OneToOneField(
+        Campeonato, on_delete=models.CASCADE, related_name='configuracao_rodada')
+    tipo_configuracao = models.CharField(
+        max_length=20, choices=TIPO_CONFIGURACAO_CHOICES, default='manual')
+    partidas_por_rodada = models.IntegerField(
+        default=1, validators=[MinValueValidator(1)])
+    dias_entre_rodadas = models.IntegerField(
+        default=7, validators=[MinValueValidator(1)])
+    data_inicio_campeonato = models.DateField(blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Configuração de Rodada"
+        verbose_name_plural = "Configurações de Rodada"
+
+    def __str__(self):
+        return f"Configuração - {self.campeonato.nome}"
+
+
 class Rodada(models.Model):
     campeonato = models.ForeignKey(Campeonato, on_delete=models.CASCADE)
     numero = models.IntegerField()
     nome = models.CharField(max_length=100, blank=True)
-    data_prevista = models.DateField(blank=True, null=True)
-    
+    data_rodada = models.DateField(blank=True, null=True)
+    local_padrao = models.CharField(
+        max_length=200, blank=True, help_text="Local padrão para todas as partidas desta rodada")
+
     class Meta:
         verbose_name = "Rodada"
         verbose_name_plural = "Rodadas"
@@ -107,26 +140,48 @@ class Rodada(models.Model):
             self.nome = f"Rodada {self.numero}"
         super().save(*args, **kwargs)
 
+    def total_partidas(self):
+        """Retorna o total de partidas da rodada"""
+        return self.partida_set.count()
+
+    def partidas_finalizadas(self):
+        """Retorna o número de partidas finalizadas da rodada"""
+        return self.partida_set.filter(status='finalizada').count()
+
+    def is_finalizada(self):
+        """Verifica se todas as partidas da rodada foram finalizadas"""
+        return self.total_partidas() > 0 and self.partidas_finalizadas() == self.total_partidas()
+
 
 class Partida(models.Model):
     STATUS_CHOICES = [
         ('pendente', 'Pendente'),
         ('finalizada', 'Finalizada'),
+        ('adiada', 'Adiada'),
+        ('cancelada', 'Cancelada'),
     ]
 
     rodada = models.ForeignKey(Rodada, on_delete=models.CASCADE)
-    equipe_mandante = models.ForeignKey(Equipe, on_delete=models.CASCADE, related_name='partidas_mandante')
-    equipe_visitante = models.ForeignKey(Equipe, on_delete=models.CASCADE, related_name='partidas_visitante')
+    equipe_mandante = models.ForeignKey(
+        Equipe, on_delete=models.CASCADE, related_name='partidas_mandante')
+    equipe_visitante = models.ForeignKey(
+        Equipe, on_delete=models.CASCADE, related_name='partidas_visitante')
     local = models.CharField(max_length=200, blank=True)
-    data_hora = models.DateTimeField(blank=True, null=True)
-    gols_mandante = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    gols_visitante = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
-    
+    data_partida = models.DateField(blank=True, null=True)
+    horario = models.TimeField(blank=True, null=True)
+    gols_mandante = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)])
+    gols_visitante = models.IntegerField(
+        default=0, validators=[MinValueValidator(0)])
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default='pendente')
+    observacoes = models.TextField(
+        blank=True, help_text="Observações sobre a partida")
+
     class Meta:
         verbose_name = "Partida"
         verbose_name_plural = "Partidas"
-        ordering = ['rodada__numero', 'data_hora']
+        ordering = ['rodada__numero', 'data_partida', 'horario']
 
     def __str__(self):
         if self.status == 'finalizada':
@@ -143,8 +198,24 @@ class Partida(models.Model):
                 return 'empate'
         return None
 
+    def data_hora_completa(self):
+        """Retorna data e horário combinados se ambos estiverem definidos"""
+        if self.data_partida and self.horario:
+            from datetime import datetime
+            return datetime.combine(self.data_partida, self.horario)
+        return None
+
     def save(self, *args, **kwargs):
+        # Se não há local definido, usar o local padrão da rodada
+        if not self.local and self.rodada.local_padrao:
+            self.local = self.rodada.local_padrao
+
+        # Se não há data definida, usar a data da rodada
+        if not self.data_partida and self.rodada.data_rodada:
+            self.data_partida = self.rodada.data_rodada
+
         super().save(*args, **kwargs)
+
         # Atualizar classificação após salvar partida
         if self.status == 'finalizada':
             self.atualizar_classificacao()
@@ -153,7 +224,8 @@ class Partida(models.Model):
     def atualizar_classificacao(self):
         """Atualiza a classificação das equipes após uma partida finalizada"""
         from .services import ClassificacaoService
-        ClassificacaoService.atualizar_classificacao_campeonato(self.rodada.campeonato)
+        ClassificacaoService.atualizar_classificacao_campeonato(
+            self.rodada.campeonato)
 
 
 class Classificacao(models.Model):
@@ -168,7 +240,7 @@ class Classificacao(models.Model):
     gols_contra = models.IntegerField(default=0)
     saldo_gols = models.IntegerField(default=0)
     pontos = models.IntegerField(default=0)
-    
+
     class Meta:
         verbose_name = "Classificação"
         verbose_name_plural = "Classificações"
@@ -185,7 +257,7 @@ class Classificacao(models.Model):
             equipe_mandante=self.equipe,
             status='finalizada'
         )
-        
+
         partidas_visitante = Partida.objects.filter(
             rodada__campeonato=self.campeonato,
             equipe_visitante=self.equipe,
@@ -205,7 +277,7 @@ class Classificacao(models.Model):
             self.jogos += 1
             self.gols_pro += partida.gols_mandante
             self.gols_contra += partida.gols_visitante
-            
+
             if partida.gols_mandante > partida.gols_visitante:
                 self.vitorias += 1
             elif partida.gols_mandante < partida.gols_visitante:
@@ -218,7 +290,7 @@ class Classificacao(models.Model):
             self.jogos += 1
             self.gols_pro += partida.gols_visitante
             self.gols_contra += partida.gols_mandante
-            
+
             if partida.gols_visitante > partida.gols_mandante:
                 self.vitorias += 1
             elif partida.gols_visitante < partida.gols_mandante:

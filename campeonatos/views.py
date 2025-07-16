@@ -8,9 +8,9 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 import json
 
-from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao
-from .services import CampeonatoService, ClassificacaoService, PartidaService
-from .forms import CampeonatoForm, EquipeForm, PartidaForm
+from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao, ConfiguracaoRodada
+from .services import CampeonatoService, ClassificacaoService, PartidaService, RodadaService
+from .forms import CampeonatoForm, EquipeForm, PartidaForm, ConfiguracaoRodadaForm, RodadaForm, PartidaManualForm
 
 
 def dashboard(request):
@@ -456,6 +456,209 @@ def partidas_list(request):
         }
     }
     return render(request, 'campeonatos/partidas_list.html', context)
+
+
+# Novas views para gerenciamento de rodadas
+def configuracao_rodada(request, campeonato_id):
+    """Configuração de rodadas para um campeonato"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+
+    try:
+        configuracao = campeonato.configuracao_rodada
+    except ConfiguracaoRodada.DoesNotExist:
+        configuracao = None
+
+    if request.method == 'POST':
+        form = ConfiguracaoRodadaForm(request.POST, instance=configuracao)
+        if form.is_valid():
+            configuracao = form.save(commit=False)
+            configuracao.campeonato = campeonato
+            configuracao.save()
+            messages.success(
+                request, 'Configuração de rodada salva com sucesso!')
+
+            # Redirecionar para gerar rodadas se solicitado
+            if 'gerar_rodadas' in request.POST:
+                return redirect('gerar_rodadas', campeonato_id=campeonato.id)
+
+            return redirect('campeonato_detail', pk=campeonato.id)
+    else:
+        form = ConfiguracaoRodadaForm(instance=configuracao)
+
+    context = {
+        'campeonato': campeonato,
+        'form': form,
+        'configuracao': configuracao
+    }
+    return render(request, 'campeonatos/configuracao_rodada.html', context)
+
+
+def gerar_rodadas(request, campeonato_id):
+    """Gera rodadas baseadas na configuração do campeonato"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+
+    if request.method == 'POST':
+        try:
+            num_rodadas = RodadaService.gerar_rodadas_configuravel(campeonato)
+
+            if campeonato.configuracao_rodada.tipo_configuracao == 'automatica':
+                messages.success(
+                    request, f'{num_rodadas} rodadas geradas automaticamente com sucesso!')
+            else:
+                messages.success(
+                    request, f'Estrutura de {num_rodadas} rodadas preparada para configuração manual!')
+
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f'Erro ao gerar rodadas: {str(e)}')
+
+        return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
+
+    try:
+        configuracao = campeonato.configuracao_rodada
+    except ConfiguracaoRodada.DoesNotExist:
+        messages.error(
+            request, 'Configure primeiro as rodadas antes de gerá-las.')
+        return redirect('configuracao_rodada', campeonato_id=campeonato.id)
+
+    context = {
+        'campeonato': campeonato,
+        'configuracao': configuracao
+    }
+    return render(request, 'campeonatos/gerar_rodadas.html', context)
+
+
+def gerenciar_rodadas(request, campeonato_id):
+    """Lista e permite gerenciar rodadas de um campeonato"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+
+    # Obter rodadas com partidas agrupadas
+    rodadas_data = PartidaService.obter_partidas_por_rodada_agrupadas(
+        campeonato)
+
+    context = {
+        'campeonato': campeonato,
+        'rodadas_data': rodadas_data,
+    }
+    return render(request, 'campeonatos/gerenciar_rodadas.html', context)
+
+
+def editar_rodada(request, campeonato_id, rodada_id):
+    """Edita uma rodada específica"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+    rodada = get_object_or_404(Rodada, pk=rodada_id, campeonato=campeonato)
+
+    if request.method == 'POST':
+        form = RodadaForm(request.POST, instance=rodada)
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request, f'Rodada {rodada.numero} atualizada com sucesso!')
+            return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
+    else:
+        form = RodadaForm(instance=rodada)
+
+    context = {
+        'campeonato': campeonato,
+        'rodada': rodada,
+        'form': form
+    }
+    return render(request, 'campeonatos/editar_rodada.html', context)
+
+
+def adicionar_partida_manual(request, campeonato_id, rodada_id):
+    """Adiciona uma partida manualmente a uma rodada"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+    rodada = get_object_or_404(Rodada, pk=rodada_id, campeonato=campeonato)
+
+    if request.method == 'POST':
+        form = PartidaManualForm(campeonato, request.POST)
+        if form.is_valid():
+            try:
+                partida = RodadaService.adicionar_partida_manual(
+                    rodada=rodada,
+                    equipe_mandante=form.cleaned_data['equipe_mandante'],
+                    equipe_visitante=form.cleaned_data['equipe_visitante'],
+                    local=form.cleaned_data.get('local'),
+                    horario=form.cleaned_data.get('horario'),
+                    data_partida=form.cleaned_data.get('data_partida')
+                )
+                messages.success(
+                    request, f'Partida {partida} adicionada com sucesso!')
+                return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
+            except ValueError as e:
+                messages.error(request, str(e))
+    else:
+        form = PartidaManualForm(campeonato)
+        # Pré-preencher data com a data da rodada
+        if rodada.data_rodada:
+            form.fields['data_partida'].initial = rodada.data_rodada
+
+    # Obter partidas disponíveis para mostrar opções
+    partidas_disponiveis = RodadaService.obter_partidas_disponiveis_para_rodada(
+        campeonato, rodada)
+
+    context = {
+        'campeonato': campeonato,
+        'rodada': rodada,
+        'form': form,
+        # Mostrar apenas 10 sugestões
+        'partidas_disponiveis': partidas_disponiveis[:10]
+    }
+    return render(request, 'campeonatos/adicionar_partida_manual.html', context)
+
+
+def reagrupar_partidas_por_data(request, campeonato_id):
+    """Reagrupa partidas existentes por data em novas rodadas"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+
+    if request.method == 'POST':
+        try:
+            RodadaService.reagrupar_partidas_por_data(campeonato)
+            messages.success(
+                request, 'Partidas reagrupadas por data com sucesso!')
+        except Exception as e:
+            messages.error(request, f'Erro ao reagrupar partidas: {str(e)}')
+
+        return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
+
+    # Mostrar preview do reagrupamento
+    partidas = Partida.objects.filter(
+        rodada__campeonato=campeonato).order_by('data_partida', 'horario')
+
+    # Agrupar por data para mostrar preview
+    partidas_por_data = {}
+    for partida in partidas:
+        data = partida.data_partida or 'Sem data'
+        if data not in partidas_por_data:
+            partidas_por_data[data] = []
+        partidas_por_data[data].append(partida)
+
+    context = {
+        'campeonato': campeonato,
+        'partidas_por_data': partidas_por_data
+    }
+    return render(request, 'campeonatos/reagrupar_partidas.html', context)
+
+
+@require_http_methods(["POST"])
+def excluir_partida(request, campeonato_id, partida_id):
+    """Exclui uma partida específica"""
+    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+    partida = get_object_or_404(
+        Partida, pk=partida_id, rodada__campeonato=campeonato)
+
+    if partida.status == 'finalizada':
+        messages.error(
+            request, 'Não é possível excluir uma partida já finalizada.')
+    else:
+        partida_str = str(partida)
+        partida.delete()
+        messages.success(
+            request, f'Partida {partida_str} excluída com sucesso!')
+
+    return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
 
 
 # API Views para AJAX

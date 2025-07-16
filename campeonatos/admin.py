@@ -1,15 +1,16 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Equipe, Campeonato, Participacao, Rodada, Partida, Classificacao
+from .models import Equipe, Campeonato, Participacao, Rodada, Partida, Classificacao, ConfiguracaoRodada
 
 
 @admin.register(Equipe)
 class EquipeAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'cidade', 'representante', 'escudo_preview', 'criado_em')
+    list_display = ('nome', 'cidade', 'representante',
+                    'escudo_preview', 'criado_em')
     list_filter = ('cidade', 'criado_em')
     search_fields = ('nome', 'cidade', 'representante')
     readonly_fields = ('criado_em',)
-    
+
     def escudo_preview(self, obj):
         if obj.escudo:
             return format_html('<img src="{}" width="30" height="30" style="border-radius: 50%;" />', obj.escudo.url)
@@ -19,11 +20,12 @@ class EquipeAdmin(admin.ModelAdmin):
 
 @admin.register(Campeonato)
 class CampeonatoAdmin(admin.ModelAdmin):
-    list_display = ('nome', 'ano', 'tipo', 'status', 'total_equipes', 'criado_em')
+    list_display = ('nome', 'ano', 'tipo', 'status',
+                    'total_equipes', 'criado_em')
     list_filter = ('ano', 'tipo', 'status', 'criado_em')
     search_fields = ('nome',)
     readonly_fields = ('criado_em',)
-    
+
     fieldsets = (
         ('Informações Básicas', {
             'fields': ('nome', 'ano', 'tipo', 'status')
@@ -37,6 +39,15 @@ class CampeonatoAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         })
     )
+
+
+@admin.register(ConfiguracaoRodada)
+class ConfiguracaoRodadaAdmin(admin.ModelAdmin):
+    list_display = ('campeonato', 'tipo_configuracao', 'partidas_por_rodada',
+                    'dias_entre_rodadas', 'data_inicio_campeonato')
+    list_filter = ('tipo_configuracao', 'partidas_por_rodada')
+    search_fields = ('campeonato__nome',)
+    autocomplete_fields = ('campeonato',)
 
 
 class ParticipacaoInline(admin.TabularInline):
@@ -55,10 +66,11 @@ class ParticipacaoAdmin(admin.ModelAdmin):
 
 @admin.register(Rodada)
 class RodadaAdmin(admin.ModelAdmin):
-    list_display = ('campeonato', 'numero', 'nome', 'data_prevista', 'total_partidas')
-    list_filter = ('campeonato', 'data_prevista')
+    list_display = ('campeonato', 'numero', 'nome',
+                    'data_rodada', 'total_partidas', 'local_padrao')
+    list_filter = ('campeonato', 'data_rodada')
     search_fields = ('campeonato__nome', 'nome')
-    
+
     def total_partidas(self, obj):
         return obj.partida_set.count()
     total_partidas.short_description = "Total de Partidas"
@@ -66,24 +78,26 @@ class RodadaAdmin(admin.ModelAdmin):
 
 @admin.register(Partida)
 class PartidaAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'rodada', 'local', 'data_hora', 'status', 'resultado_display')
-    list_filter = ('status', 'rodada__campeonato', 'data_hora')
-    search_fields = ('equipe_mandante__nome', 'equipe_visitante__nome', 'local')
+    list_display = ('__str__', 'rodada', 'local', 'data_partida',
+                    'horario', 'status', 'resultado_display')
+    list_filter = ('status', 'rodada__campeonato', 'data_partida')
+    search_fields = ('equipe_mandante__nome',
+                     'equipe_visitante__nome', 'local')
     autocomplete_fields = ('equipe_mandante', 'equipe_visitante')
-    
+
     fieldsets = (
         ('Partida', {
             'fields': ('rodada', 'equipe_mandante', 'equipe_visitante')
         }),
         ('Detalhes', {
-            'fields': ('local', 'data_hora', 'status')
+            'fields': ('local', 'data_partida', 'horario', 'status', 'observacoes')
         }),
         ('Resultado', {
             'fields': ('gols_mandante', 'gols_visitante'),
             'classes': ('collapse',)
         })
     )
-    
+
     def resultado_display(self, obj):
         if obj.status == 'finalizada':
             return f"{obj.gols_mandante} x {obj.gols_visitante}"
@@ -93,11 +107,13 @@ class PartidaAdmin(admin.ModelAdmin):
 
 @admin.register(Classificacao)
 class ClassificacaoAdmin(admin.ModelAdmin):
-    list_display = ('equipe', 'campeonato', 'grupo', 'pontos', 'jogos', 'vitorias', 'empates', 'derrotas', 'saldo_gols')
+    list_display = ('equipe', 'campeonato', 'grupo', 'pontos',
+                    'jogos', 'vitorias', 'empates', 'derrotas', 'saldo_gols')
     list_filter = ('campeonato', 'grupo')
     search_fields = ('equipe__nome', 'campeonato__nome')
-    readonly_fields = ('jogos', 'vitorias', 'empates', 'derrotas', 'gols_pro', 'gols_contra', 'saldo_gols', 'pontos')
-    
+    readonly_fields = ('jogos', 'vitorias', 'empates', 'derrotas',
+                       'gols_pro', 'gols_contra', 'saldo_gols', 'pontos')
+
     def has_add_permission(self, request):
         # Classificações são criadas automaticamente
         return False
