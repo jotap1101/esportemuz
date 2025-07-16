@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% load static %}
 
 {% block title %}Partidas - EsporteMuz{% endblock %}
@@ -7,7 +8,8 @@
 <div class="row mb-4">
     <div class="col-12">
         <h1 class="display-4 fw-bold text-primary">
-            <i class="bi bi-calendar-event-fill me-3"></i>Partidas
+            <i class="bi bi-calendar-event-fill me-3"></i>
+            Partidas
         </h1>
         <p class="lead text-muted">Gerencie todas as partidas dos campeonatos</p>
     </div>
@@ -25,8 +27,7 @@
                             <select name="campeonato" id="campeonato" class="form-select">
                                 <option value="">Todos os campeonatos</option>
                                 {% for campeonato in campeonatos %}
-                                    <option value="{{ campeonato.pk }}" 
-                                            {% if filtros.campeonato == campeonato.pk|stringformat:"s" %}selected{% endif %}>
+                                    <option value="{{ campeonato.pk }}" {% if filtros.campeonato == campeonato.pk|stringformat:"s" %}selected{% endif %}>
                                         {{ campeonato.nome }} - {{ campeonato.ano }}
                                     </option>
                                 {% endfor %}
@@ -44,13 +45,15 @@
                         
                         <div class="col-md-2">
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-search me-1"></i>Filtrar
+                                <i class="bi bi-search me-1"></i>
+                                Filtrar
                             </button>
                         </div>
                         
                         <div class="col-md-2">
                             <button type="button" class="btn btn-outline-secondary w-100 btn-clear-filters">
-                                <i class="bi bi-x-circle me-1"></i>Limpar
+                                <i class="bi bi-x-circle me-1"></i>
+                                Limpar
                             </button>
                         </div>
                     </div>
@@ -63,193 +66,195 @@
 <!-- Lista de Partidas -->
 {% if partidas_organizadas %}
     {% for campeonato_nome, campeonato_data in partidas_organizadas.items %}
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-trophy-fill me-2"></i>{{ campeonato_nome }}
-                        <small class="ms-2 opacity-75">({{ campeonato_data.campeonato.ano }})</small>
-                    </h5>
-                </div>
-                <div class="card-body">
-                    {% for rodada_nome, rodada_data in campeonato_data.rodadas.items %}
-                    <div class="mb-4">
-                        <h6 class="text-secondary border-bottom pb-2 mb-3">
-                            <i class="bi bi-calendar-week me-1"></i>{{ rodada_nome }}
-                            {% if rodada_data.rodada.data_prevista %}
-                                <small class="text-muted ms-2">{{ rodada_data.rodada.data_prevista|date:"d/m/Y" }}</small>
-                            {% endif %}
-                        </h6>
-                        
-                        <div class="row">
-                            {% for partida in rodada_data.partidas %}
-                            <div class="col-lg-6 col-md-12 mb-3">
-                                <div class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}">
-                                    <div class="card-body">
-                                        <!-- Times e resultado -->
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <div class="d-flex align-items-center flex-grow-1">
-                                                {% if partida.equipe_mandante.escudo %}
-                                                    <img src="{{ partida.equipe_mandante.escudo.url }}" 
-                                                         alt="{{ partida.equipe_mandante.nome }}" 
-                                                         class="team-logo me-2">
-                                                {% endif %}
-                                                <div class="flex-grow-1">
-                                                    <strong>{{ partida.equipe_mandante.nome }}</strong>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="text-center mx-3">
-                                                {% if partida.status == 'finalizada' %}
-                                                    <div class="score-display">
-                                                        {{ partida.gols_mandante }} <span class="vs">x</span> {{ partida.gols_visitante }}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-trophy-fill me-2"></i>
+                            {{ campeonato_nome }}
+                            <small class="ms-2 opacity-75">({{ campeonato_data.campeonato.ano }})</small>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% for rodada_nome, rodada_data in campeonato_data.rodadas.items %}
+                            <div class="mb-4">
+                                <h6 class="text-secondary border-bottom pb-2 mb-3">
+                                    <i class="bi bi-calendar-week me-1"></i>
+                                    {{ rodada_nome }}
+                                    {% if rodada_data.rodada.data_prevista %}
+                                        <small class="text-muted ms-2">{{ rodada_data.rodada.data_prevista|date:"d/m/Y" }}</small>
+                                    {% endif %}
+                                </h6>
+                                
+                                <div class="row">
+                                    {% for partida in rodada_data.partidas %}
+                                        <div class="col-lg-6 col-md-12 mb-3">
+                                            <div class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}">
+                                                <div class="card-body">
+                                                    <!-- Times e resultado -->
+                                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                                        <div class="d-flex align-items-center flex-grow-1">
+                                                            {% if partida.equipe_mandante.escudo %}
+                                                                <img src="{{ partida.equipe_mandante.escudo.url }}" alt="{{ partida.equipe_mandante.nome }}" class="team-logo me-2">
+                                                            {% endif %}
+                                                            <div class="flex-grow-1">
+                                                                <strong>{{ partida.equipe_mandante.nome }}</strong>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div class="text-center mx-3">
+                                                            {% if partida.status == 'finalizada' %}
+                                                                <div class="score-display">
+                                                                    {{ partida.gols_mandante }} 
+                                                                    <span class="vs">x</span> 
+                                                                    {{ partida.gols_visitante }}
+                                                                </div>
+                                                            {% else %}
+                                                                <div class="text-muted fs-5">vs</div>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        <div class="d-flex align-items-center flex-grow-1 justify-content-end">
+                                                            <div class="text-end flex-grow-1">
+                                                                <strong>{{ partida.equipe_visitante.nome }}</strong>
+                                                            </div>
+                                                            {% if partida.equipe_visitante.escudo %}
+                                                                <img src="{{ partida.equipe_visitante.escudo.url }}" alt="{{ partida.equipe_visitante.nome }}" class="team-logo ms-2">
+                                                            {% endif %}
+                                                        </div>
                                                     </div>
-                                                {% else %}
-                                                    <div class="text-muted fs-5">vs</div>
-                                                {% endif %}
-                                            </div>
-                                            
-                                            <div class="d-flex align-items-center flex-grow-1 justify-content-end">
-                                                <div class="text-end flex-grow-1">
-                                                    <strong>{{ partida.equipe_visitante.nome }}</strong>
+                                                    
+                                                    <!-- Status e ações -->
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <div>
+                                                            <span class="badge bg-{% if partida.status == 'finalizada' %}success{% else %}warning{% endif %}">
+                                                                {{ partida.get_status_display }}
+                                                            </span>
+                                                            {% if partida.local %}
+                                                                <small class="text-muted ms-2">
+                                                                    <i class="bi bi-geo-alt me-1"></i>
+                                                                    {{ partida.local }}
+                                                                </small>
+                                                            {% endif %}
+                                                            {% if partida.data_hora %}
+                                                                <br>
+                                                                <small class="text-muted">
+                                                                    <i class="bi bi-clock me-1"></i>
+                                                                    {{ partida.data_hora|date:"d/m H:i" }}
+                                                                </small>
+                                                            {% endif %}
+                                                        </div>
+                                                        
+                                                        {% if user.is_authenticated and partida.status == 'pendente' %}
+                                                            <button class="btn btn-primary btn-sm btn-register-result" data-match-id="{{ partida.pk }}" data-mandante="{{ partida.equipe_mandante.nome }}" data-visitante="{{ partida.equipe_visitante.nome }}">
+                                                                <i class="bi bi-plus me-1"></i>
+                                                                Resultado
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
                                                 </div>
-                                                {% if partida.equipe_visitante.escudo %}
-                                                    <img src="{{ partida.equipe_visitante.escudo.url }}" 
-                                                         alt="{{ partida.equipe_visitante.nome }}" 
-                                                         class="team-logo ms-2">
-                                                {% endif %}
                                             </div>
                                         </div>
-                                        
-                                        <!-- Status e ações -->
-                                        <div class="d-flex justify-content-between align-items-center">
-                                            <div>
-                                                <span class="badge bg-{% if partida.status == 'finalizada' %}success{% else %}warning{% endif %}">
-                                                    {{ partida.get_status_display }}
-                                                </span>
-                                                {% if partida.local %}
-                                                    <small class="text-muted ms-2">
-                                                        <i class="bi bi-geo-alt me-1"></i>{{ partida.local }}
-                                                    </small>
-                                                {% endif %}
-                                                {% if partida.data_hora %}
-                                                    <br><small class="text-muted">
-                                                        <i class="bi bi-clock me-1"></i>{{ partida.data_hora|date:"d/m H:i" }}
-                                                    </small>
-                                                {% endif %}
-                                            </div>
-                                            
-                                            {% if user.is_authenticated and partida.status == 'pendente' %}
-                                                <button class="btn btn-primary btn-sm btn-register-result"
-                                                        data-match-id="{{ partida.pk }}"
-                                                        data-mandante="{{ partida.equipe_mandante.nome }}"
-                                                        data-visitante="{{ partida.equipe_visitante.nome }}">
-                                                    <i class="bi bi-plus me-1"></i>Resultado
-                                                </button>
-                                            {% endif %}
-                                        </div>
-                                    </div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            {% endfor %}
-                        </div>
+                        {% endfor %}
                     </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
-    </div>
     {% endfor %}
 {% elif page_obj %}
     <!-- Fallback para quando há filtro específico - mantém paginação normal -->
     <div class="row">
         {% for partida in page_obj %}
-        <div class="col-lg-6 col-md-12 mb-4">
-            <div class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}">
-                <div class="card-body">
-                    <!-- Header da partida -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h6 class="card-title mb-0">{{ partida.rodada.campeonato.nome }}</h6>
-                            <small class="text-muted">{{ partida.rodada.nome }}</small>
-                        </div>
-                        <span class="badge bg-{% if partida.status == 'finalizada' %}success{% else %}warning{% endif %}">
-                            {{ partida.get_status_display }}
-                        </span>
-                    </div>
-                    
-                    <!-- Times e resultado -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="d-flex align-items-center flex-grow-1">
-                            {% if partida.equipe_mandante.escudo %}
-                                <img src="{{ partida.equipe_mandante.escudo.url }}" 
-                                     alt="{{ partida.equipe_mandante.nome }}" 
-                                     class="team-logo me-2">
-                            {% endif %}
-                            <div class="flex-grow-1">
-                                <strong>{{ partida.equipe_mandante.nome }}</strong>
-                                <br><small class="text-muted">Mandante</small>
+            <div class="col-lg-6 col-md-12 mb-4">
+                <div class="card match-card {% if partida.status == 'finalizada' %}finished{% else %}pending{% endif %}">
+                    <div class="card-body">
+                        <!-- Header da partida -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="card-title mb-0">{{ partida.rodada.campeonato.nome }}</h6>
+                                <small class="text-muted">{{ partida.rodada.nome }}</small>
                             </div>
+                            <span class="badge bg-{% if partida.status == 'finalizada' %}success{% else %}warning{% endif %}">
+                                {{ partida.get_status_display }}
+                            </span>
                         </div>
                         
-                        <div class="text-center mx-3">
-                            {% if partida.status == 'finalizada' %}
-                                <div class="score-display">
-                                    {{ partida.gols_mandante }} <span class="vs">x</span> {{ partida.gols_visitante }}
+                        <!-- Times e resultado -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center flex-grow-1">
+                                {% if partida.equipe_mandante.escudo %}
+                                    <img src="{{ partida.equipe_mandante.escudo.url }}" alt="{{ partida.equipe_mandante.nome }}" class="team-logo me-2">
+                                {% endif %}
+                                <div class="flex-grow-1">
+                                    <strong>{{ partida.equipe_mandante.nome }}</strong>
+                                    <br>
+                                    <small class="text-muted">Mandante</small>
                                 </div>
-                            {% else %}
-                                <div class="text-muted fs-4">vs</div>
-                            {% endif %}
+                            </div>
+                            
+                            <div class="text-center mx-3">
+                                {% if partida.status == 'finalizada' %}
+                                    <div class="score-display">
+                                        {{ partida.gols_mandante }} 
+                                        <span class="vs">x</span> 
+                                        {{ partida.gols_visitante }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-muted fs-4">vs</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-flex align-items-center flex-grow-1 justify-content-end">
+                                <div class="text-end flex-grow-1">
+                                    <strong>{{ partida.equipe_visitante.nome }}</strong>
+                                    <br>
+                                    <small class="text-muted">Visitante</small>
+                                </div>
+                                {% if partida.equipe_visitante.escudo %}
+                                    <img src="{{ partida.equipe_visitante.escudo.url }}" alt="{{ partida.equipe_visitante.nome }}" class="team-logo ms-2">
+                                {% endif %}
+                            </div>
                         </div>
                         
-                        <div class="d-flex align-items-center flex-grow-1 justify-content-end">
-                            <div class="text-end flex-grow-1">
-                                <strong>{{ partida.equipe_visitante.nome }}</strong>
-                                <br><small class="text-muted">Visitante</small>
+                        <!-- Detalhes da partida -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                {% if partida.local %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-geo-alt me-1"></i>
+                                        {{ partida.local }}
+                                    </small>
+                                    <br>
+                                {% endif %}
+                                {% if partida.data_hora %}
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ partida.data_hora|date:"d/m/Y H:i" }}
+                                    </small>
+                                {% endif %}
                             </div>
-                            {% if partida.equipe_visitante.escudo %}
-                                <img src="{{ partida.equipe_visitante.escudo.url }}" 
-                                     alt="{{ partida.equipe_visitante.nome }}" 
-                                     class="team-logo ms-2">
+                            
+                            {% if user.is_authenticated and partida.status == 'pendente' %}
+                                <button class="btn btn-primary btn-sm btn-register-result" data-match-id="{{ partida.pk }}" data-mandante="{{ partida.equipe_mandante.nome }}" data-visitante="{{ partida.equipe_visitante.nome }}">
+                                    <i class="bi bi-plus me-1"></i>
+                                    Resultado
+                                </button>
+                            {% elif partida.status == 'finalizada' %}
+                                <div class="text-end">
+                                    <small class="text-success">
+                                        <i class="bi bi-check-circle me-1"></i>
+                                        Finalizada
+                                    </small>
+                                </div>
                             {% endif %}
                         </div>
-                    </div>
-                    
-                    <!-- Detalhes da partida -->
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            {% if partida.local %}
-                                <small class="text-muted">
-                                    <i class="bi bi-geo-alt me-1"></i>{{ partida.local }}
-                                </small>
-                                <br>
-                            {% endif %}
-                            {% if partida.data_hora %}
-                                <small class="text-muted">
-                                    <i class="bi bi-clock me-1"></i>{{ partida.data_hora|date:"d/m/Y H:i" }}
-                                </small>
-                            {% endif %}
-                        </div>
-                        
-                        {% if user.is_authenticated and partida.status == 'pendente' %}
-                            <button class="btn btn-primary btn-sm btn-register-result"
-                                    data-match-id="{{ partida.pk }}"
-                                    data-mandante="{{ partida.equipe_mandante.nome }}"
-                                    data-visitante="{{ partida.equipe_visitante.nome }}">
-                                <i class="bi bi-plus me-1"></i>Resultado
-                            </button>
-                        {% elif partida.status == 'finalizada' %}
-                            <div class="text-end">
-                                <small class="text-success">
-                                    <i class="bi bi-check-circle me-1"></i>Finalizada
-                                </small>
-                            </div>
-                        {% endif %}
                     </div>
                 </div>
             </div>
-        </div>
         {% endfor %}
     </div>
 {% else %}
@@ -269,51 +274,53 @@
 
 <!-- Paginação -->
 {% if page_obj.has_other_pages %}
-<div class="row mt-4">
-    <div class="col-12">
-        <nav aria-label="Paginação de partidas">
-            <ul class="pagination justify-content-center">
-                {% if page_obj.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page=1{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
-                            <i class="bi bi-chevron-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
-                            <i class="bi bi-chevron-left"></i>
-                        </a>
-                    </li>
-                {% endif %}
-                
-                {% for num in page_obj.paginator.page_range %}
-                    {% if page_obj.number == num %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Paginação de partidas">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">{{ num }}</a>
+                            <a class="page-link" href="?page=1{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
+                                <i class="bi bi-chevron-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
                         </li>
                     {% endif %}
-                {% endfor %}
-                
-                {% if page_obj.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
-                            <i class="bi bi-chevron-double-right"></i>
-                        </a>
-                    </li>
-                {% endif %}
-            </ul>
-        </nav>
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if filtros.campeonato %}&campeonato={{ filtros.campeonato }}{% endif %}{% if filtros.status %}&status={{ filtros.status }}{% endif %}">
+                                <i class="bi bi-chevron-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
     </div>
-</div>
 {% endif %}
 
 <!-- Estatísticas -->
@@ -322,7 +329,8 @@
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-graph-up me-2"></i>Estatísticas das Partidas
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estatísticas das Partidas
                 </h5>
             </div>
             <div class="card-body">
@@ -369,13 +377,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="golsMandante" class="form-label">Gols Mandante</label>
-                            <input type="number" class="form-control" id="golsMandante" name="golsMandante" 
-                                   min="0" max="50" required>
+                            <input type="number" class="form-control" id="golsMandante" name="golsMandante" min="0" max="50" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label for="golsVisitante" class="form-label">Gols Visitante</label>
-                            <input type="number" class="form-control" id="golsVisitante" name="golsVisitante" 
-                                   min="0" max="50" required>
+                            <input type="number" class="form-control" id="golsVisitante" name="golsVisitante" min="0" max="50" required>
                         </div>
                     </div>
                 </form>
@@ -387,4 +393,4 @@
         </div>
     </div>
 </div>
-{% endblock %}
+{% endblock content %}

@@ -1,7 +1,8 @@
 {% extends 'base.html' %}
+
 {% load static %}
 
-{% block title %}Dashboard - EsporteMuz{% endblock %}
+{% block title %}Dashboard - EsporteMuz{% endblock title %}
 
 {% block content %}
 <div class="row mb-4">
@@ -9,19 +10,22 @@
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
             <div>
                 <h1 class="display-4 fw-bold text-primary">
-                    <i class="bi bi-house-fill me-3"></i>Dashboard
+                    <i class="bi bi-house-fill me-3"></i>
+                    Dashboard
                 </h1>
                 <p class="lead text-muted">Visão geral dos campeonatos e resultados</p>
             </div>
             {% if user.is_authenticated %}
-            <div class="d-flex gap-2">
-                <a href="{% url 'campeonato_create' %}" class="btn btn-primary btn-lg">
-                    <i class="bi bi-plus-lg me-2"></i>Novo Campeonato
-                </a>
-                <a href="{% url 'equipe_create' %}" class="btn btn-outline-primary btn-lg">
-                    <i class="bi bi-plus-lg me-2"></i>Nova Equipe
-                </a>
-            </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'campeonato_create' %}" class="btn btn-primary btn-lg">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Novo Campeonato
+                    </a>
+                    <a href="{% url 'equipe_create' %}" class="btn btn-outline-primary btn-lg">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Nova Equipe
+                    </a>
+                </div>
             {% endif %}
         </div>
     </div>
@@ -100,32 +104,34 @@
         <div class="card">
             <div class="card-header bg-primary text-white">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-trophy-fill me-2"></i>Campeonatos em Andamento
+                    <i class="bi bi-trophy-fill me-2"></i>
+                    Campeonatos em Andamento
                 </h5>
             </div>
             <div class="card-body">
                 {% if campeonatos_andamento %}
                     <div class="row">
                         {% for campeonato in campeonatos_andamento %}
-                        <div class="col-lg-4 col-md-6 mb-3">
-                            <div class="card border-primary">
-                                <div class="card-body">
-                                    <h6 class="card-title">{{ campeonato.nome }}</h6>
-                                    <p class="card-text">
-                                        <small class="text-muted">{{ campeonato.ano }}</small><br>
-                                        <span class="badge bg-{{ campeonato.status|yesno:'success,warning,secondary' }}">
-                                            {{ campeonato.get_status_display }}
-                                        </span>
-                                    </p>
-                                    <p class="card-text">
-                                        <i class="bi bi-people me-1"></i>{{ campeonato.total_equipes }} equipes
-                                    </p>
-                                    <a href="{% url 'campeonato_detail' campeonato.pk %}" class="btn btn-primary btn-sm">
-                                        Ver Detalhes
-                                    </a>
+                            <div class="col-lg-4 col-md-6 mb-3">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <h6 class="card-title">{{ campeonato.nome }}</h6>
+                                        <p class="card-text">
+                                            <small class="text-muted">{{ campeonato.ano }}</small><br>
+                                            <span class="badge bg-{{ campeonato.status|yesno:'success,warning,secondary' }}">
+                                                {{ campeonato.get_status_display }}
+                                            </span>
+                                        </p>
+                                        <p class="card-text">
+                                            <i class="bi bi-people me-1"></i>
+                                            {{ campeonato.total_equipes }} equipes
+                                        </p>
+                                        <a href="{% url 'campeonato_detail' campeonato.pk %}" class="btn btn-primary btn-sm">
+                                            Ver Detalhes
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                         {% endfor %}
                     </div>
                     <div class="text-center mt-3">
@@ -138,9 +144,10 @@
                         <i class="bi bi-trophy text-muted" style="font-size: 3rem;"></i>
                         <h6 class="text-muted mt-2">Nenhum campeonato em andamento</h6>
                         {% if user.is_authenticated %}
-                        <a href="{% url 'campeonato_create' %}" class="btn btn-primary mt-2">
-                            <i class="bi bi-plus-lg me-1"></i>Criar Primeiro Campeonato
-                        </a>
+                            <a href="{% url 'campeonato_create' %}" class="btn btn-primary mt-2">
+                                <i class="bi bi-plus-lg me-1"></i>
+                                Criar Primeiro Campeonato
+                            </a>
                         {% endif %}
                     </div>
                 {% endif %}
@@ -156,24 +163,25 @@
         <div class="card h-100">
             <div class="card-header bg-success text-white">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-check-circle-fill me-2"></i>Últimos Resultados
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Últimos Resultados
                 </h5>
             </div>
             <div class="card-body">
                 {% if ultimos_resultados %}
                     {% for partida in ultimos_resultados %}
-                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                        <div class="flex-grow-1">
-                            <strong>{{ partida.equipe_mandante.nome }}</strong>
-                            <span class="badge bg-primary mx-2">{{ partida.gols_mandante }}</span>
-                            x
-                            <span class="badge bg-primary mx-2">{{ partida.gols_visitante }}</span>
-                            <strong>{{ partida.equipe_visitante.nome }}</strong>
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                            <div class="flex-grow-1">
+                                <strong>{{ partida.equipe_mandante.nome }}</strong>
+                                <span class="badge bg-primary mx-2">{{ partida.gols_mandante }}</span>
+                                x
+                                <span class="badge bg-primary mx-2">{{ partida.gols_visitante }}</span>
+                                <strong>{{ partida.equipe_visitante.nome }}</strong>
+                            </div>
+                            <small class="text-muted">
+                                {{ partida.rodada.campeonato.nome }}
+                            </small>
                         </div>
-                        <small class="text-muted">
-                            {{ partida.rodada.campeonato.nome }}
-                        </small>
-                    </div>
                     {% endfor %}
                     <div class="text-center mt-3">
                         <a href="{% url 'partidas_list' %}?status=finalizada" class="btn btn-outline-success btn-sm">
@@ -195,27 +203,30 @@
         <div class="card h-100">
             <div class="card-header bg-info text-white">
                 <h5 class="card-title mb-0">
-                    <i class="bi bi-calendar-event-fill me-2"></i>Próximas Partidas
+                    <i class="bi bi-calendar-event-fill me-2"></i>
+                    Próximas Partidas
                 </h5>
             </div>
             <div class="card-body">
                 {% if proximas_partidas %}
                     {% for partida in proximas_partidas %}
-                    <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-                        <div class="flex-grow-1">
-                            <strong>{{ partida.equipe_mandante.nome }}</strong>
-                            x
-                            <strong>{{ partida.equipe_visitante.nome }}</strong>
-                            {% if partida.data_hora %}
-                                <br><small class="text-muted">
-                                    <i class="bi bi-clock me-1"></i>{{ partida.data_hora|date:"d/m H:i" }}
-                                </small>
-                            {% endif %}
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+                            <div class="flex-grow-1">
+                                <strong>{{ partida.equipe_mandante.nome }}</strong>
+                                x
+                                <strong>{{ partida.equipe_visitante.nome }}</strong>
+                                {% if partida.data_hora %}
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock me-1"></i>
+                                        {{ partida.data_hora|date:"d/m H:i" }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">
+                                {{ partida.rodada.campeonato.nome }}
+                            </small>
                         </div>
-                        <small class="text-muted">
-                            {{ partida.rodada.campeonato.nome }}
-                        </small>
-                    </div>
                     {% endfor %}
                     <div class="text-center mt-3">
                         <a href="{% url 'partidas_list' %}?status=pendente" class="btn btn-outline-info btn-sm">
@@ -235,44 +246,45 @@
 
 <!-- Ações Rápidas -->
 {% if user.is_authenticated %}
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="bi bi-lightning-fill me-2"></i>Ações Rápidas
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'campeonato_create' %}" class="btn btn-outline-primary w-100 p-3">
-                            <i class="bi bi-trophy-fill d-block mb-2" style="font-size: 2rem;"></i>
-                            Criar Campeonato
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'equipe_create' %}" class="btn btn-outline-success w-100 p-3">
-                            <i class="bi bi-people-fill d-block mb-2" style="font-size: 2rem;"></i>
-                            Cadastrar Equipe
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="{% url 'partidas_list' %}" class="btn btn-outline-info w-100 p-3">
-                            <i class="bi bi-calendar-event-fill d-block mb-2" style="font-size: 2rem;"></i>
-                            Gerenciar Partidas
-                        </a>
-                    </div>
-                    <div class="col-md-3 col-sm-6 mb-3">
-                        <a href="/admin/" class="btn btn-outline-warning w-100 p-3">
-                            <i class="bi bi-gear-fill d-block mb-2" style="font-size: 2rem;"></i>
-                            Administração
-                        </a>
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning-fill me-2"></i>
+                        Ações Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'campeonato_create' %}" class="btn btn-outline-primary w-100 p-3">
+                                <i class="bi bi-trophy-fill d-block mb-2" style="font-size: 2rem;"></i>
+                                Criar Campeonato
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'equipe_create' %}" class="btn btn-outline-success w-100 p-3">
+                                <i class="bi bi-people-fill d-block mb-2" style="font-size: 2rem;"></i>
+                                Cadastrar Equipe
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="{% url 'partidas_list' %}" class="btn btn-outline-info w-100 p-3">
+                                <i class="bi bi-calendar-event-fill d-block mb-2" style="font-size: 2rem;"></i>
+                                Gerenciar Partidas
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <a href="/admin/" class="btn btn-outline-warning w-100 p-3">
+                                <i class="bi bi-gear-fill d-block mb-2" style="font-size: 2rem;"></i>
+                                Administração
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endif %}
-{% endblock %}
+{% endblock content %}

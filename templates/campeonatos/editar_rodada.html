@@ -1,107 +1,102 @@
-{% extends 'base.html' %} {% block title %}Editar Rodada - {{ rodada.nome }}{%
-endblock %} {% block content %}
+{% extends 'base.html' %}
+
+{% block title %}Editar Rodada - {{ rodada.nome }}{% endblock title %}
+
+{% block content %}
 <div class="container-fluid">
-  <!-- Header -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h1 class="h3 mb-1">Editar Rodada</h1>
-          <p class="text-muted">{{ campeonato.nome }} - {{ rodada.nome }}</p>
-        </div>
-        <a
-          href="{% url 'gerenciar_rodadas' campeonato.id %}"
-          class="btn btn-outline-secondary"
-        >
-          <i class="fas fa-arrow-left"></i> Voltar
-        </a>
-      </div>
-    </div>
-  </div>
+	<!-- Header -->
+	<div class="row mb-4">
+		<div class="col-12">
+			<div class="d-flex justify-content-between align-items-center">
+				<div>
+					<h1 class="h3 mb-1">Editar Rodada</h1>
+					<p class="text-muted">{{ campeonato.nome }} - {{ rodada.nome }}</p>
+				</div>
+				<a href="{% url 'gerenciar_rodadas' campeonato.id %}" class="btn btn-outline-secondary">
+					<i class="fas fa-arrow-left"></i> 
+					Voltar
+				</a>
+			</div>
+		</div>
+	</div>
 
-  <!-- Formulário -->
-  <div class="row justify-content-center">
-    <div class="col-lg-8">
-      <div class="card">
-        <div class="card-header">
-          <h5 class="card-title mb-0">
-            <i class="fas fa-edit"></i> Informações da Rodada
-          </h5>
-        </div>
-        <div class="card-body">
-          <form method="post">
-            {% csrf_token %}
+	<!-- Formulário -->
+	<div class="row justify-content-center">
+		<div class="col-lg-8">
+			<div class="card">
+				<div class="card-header">
+					<h5 class="card-title mb-0">
+						<i class="fas fa-edit"></i> 
+						Informações da Rodada
+					</h5>
+				</div>
+				<div class="card-body">
+					<form method="post">
+						{% csrf_token %}
 
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="{{ form.nome.id_for_label }}" class="form-label">
-                  Nome da Rodada
-                </label>
-                {{ form.nome }}
-              </div>
+						<div class="row">
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.nome.id_for_label }}" class="form-label">
+									Nome da Rodada
+								</label>
+								{{ form.nome }}
+							</div>
 
-              <div class="col-md-6 mb-3">
-                <label
-                  for="{{ form.data_rodada.id_for_label }}"
-                  class="form-label"
-                >
-                  Data da Rodada
-                </label>
-                {{ form.data_rodada }}
-              </div>
-            </div>
+							<div class="col-md-6 mb-3">
+								<label for="{{ form.data_rodada.id_for_label }}" class="form-label">
+									Data da Rodada
+								</label>
+								{{ form.data_rodada }}
+							</div>
+						</div>
 
-            <div class="mb-3">
-              <label
-                for="{{ form.local_padrao.id_for_label }}"
-                class="form-label"
-              >
-                Local Padrão
-              </label>
-              {{ form.local_padrao }}
-              <div class="form-text">{{ form.local_padrao.help_text }}</div>
-            </div>
+						<div class="mb-3">
+							<label for="{{ form.local_padrao.id_for_label }}" class="form-label">
+								Local Padrão
+							</label>
+							{{ form.local_padrao }}
+							<div class="form-text">{{ form.local_padrao.help_text }}</div>
+						</div>
 
-            <div class="d-flex gap-2">
-              <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Salvar Alterações
-              </button>
-              <a
-                href="{% url 'gerenciar_rodadas' campeonato.id %}"
-                class="btn btn-secondary"
-              >
-                <i class="fas fa-times"></i> Cancelar
-              </a>
-            </div>
-          </form>
-        </div>
-      </div>
+						<div class="d-flex gap-2">
+							<button type="submit" class="btn btn-primary">
+								<i class="fas fa-save"></i> Salvar Alterações
+							</button>
+							<a href="{% url 'gerenciar_rodadas' campeonato.id %}" class="btn btn-secondary">
+								<i class="fas fa-times"></i> 
+								Cancelar
+							</a>
+						</div>
+					</form>
+				</div>
+			</div>
 
-      <!-- Informações da Rodada -->
-      <div class="card mt-4">
-        <div class="card-header">
-          <h6 class="card-title mb-0">
-            <i class="fas fa-info-circle"></i> Informações Atuais
-          </h6>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-4">
-              <small class="text-muted d-block">Número da Rodada</small>
-              <strong>{{ rodada.numero }}</strong>
-            </div>
-            <div class="col-md-4">
-              <small class="text-muted d-block">Total de Partidas</small>
-              <strong>{{ rodada.total_partidas }}</strong>
-            </div>
-            <div class="col-md-4">
-              <small class="text-muted d-block">Partidas Finalizadas</small>
-              <strong>{{ rodada.partidas_finalizadas }}</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+			<!-- Informações da Rodada -->
+			<div class="card mt-4">
+				<div class="card-header">
+					<h6 class="card-title mb-0">
+						<i class="fas fa-info-circle"></i> 
+						Informações Atuais
+					</h6>
+				</div>
+				<div class="card-body">
+					<div class="row">
+						<div class="col-md-4">
+							<small class="text-muted d-block">Número da Rodada</small>
+							<strong>{{ rodada.numero }}</strong>
+						</div>
+						<div class="col-md-4">
+							<small class="text-muted d-block">Total de Partidas</small>
+							<strong>{{ rodada.total_partidas }}</strong>
+						</div>
+						<div class="col-md-4">
+							<small class="text-muted d-block">Partidas Finalizadas</small>
+							<strong>{{ rodada.partidas_finalizadas }}</strong>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 </div>
-{% endblock %}
+{% endblock content %}
