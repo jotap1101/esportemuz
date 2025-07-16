@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Equipe, Campeonato, Participacao, Rodada, Partida, Classificacao, ConfiguracaoRodada
+from .models import Equipe, Campeonato, Participacao, Rodada, Partida, Classificacao
 
 
 @admin.register(Equipe)
@@ -21,33 +21,34 @@ class EquipeAdmin(admin.ModelAdmin):
 @admin.register(Campeonato)
 class CampeonatoAdmin(admin.ModelAdmin):
     list_display = ('nome', 'ano', 'tipo', 'status',
-                    'total_equipes', 'criado_em')
-    list_filter = ('ano', 'tipo', 'status', 'criado_em')
-    search_fields = ('nome',)
-    readonly_fields = ('criado_em',)
+                    'total_equipes', 'data_inicio', 'criado_em')
+    list_filter = ('ano', 'tipo', 'status', 'classificacao_inicial', 'criado_em')
+    search_fields = ('nome', 'descricao')
+    readonly_fields = ('criado_em', 'atualizado_em')
 
     fieldsets = (
         ('Informações Básicas', {
-            'fields': ('nome', 'ano', 'tipo', 'status')
+            'fields': ('nome', 'descricao', 'ano', 'tipo', 'status')
         }),
-        ('Configurações de Grupos', {
-            'fields': ('numero_grupos', 'times_por_grupo', 'classificados_por_grupo'),
+        ('Datas e Local', {
+            'fields': ('data_inicio', 'data_fim_prevista', 'local_padrao')
+        }),
+        ('Configurações de Grupos (apenas para Grupos + Mata-mata)', {
+            'fields': ('numero_grupos', 'times_por_grupo', 'classificados_por_grupo', 'fase_inicial_mata_mata'),
+            'classes': ('collapse',)
+        }),
+        ('Configurações de Equipes', {
+            'fields': ('max_equipes', 'classificacao_inicial', 'permite_empate')
+        }),
+        ('Configurações de Rodadas', {
+            'fields': ('tipo_geracao_rodada', 'partidas_por_rodada', 'dias_entre_rodadas'),
             'classes': ('collapse',)
         }),
         ('Metadados', {
-            'fields': ('criado_em',),
+            'fields': ('criado_em', 'atualizado_em'),
             'classes': ('collapse',)
         })
     )
-
-
-@admin.register(ConfiguracaoRodada)
-class ConfiguracaoRodadaAdmin(admin.ModelAdmin):
-    list_display = ('campeonato', 'tipo_configuracao', 'partidas_por_rodada',
-                    'dias_entre_rodadas', 'data_inicio_campeonato')
-    list_filter = ('tipo_configuracao', 'partidas_por_rodada')
-    search_fields = ('campeonato__nome',)
-    autocomplete_fields = ('campeonato',)
 
 
 class ParticipacaoInline(admin.TabularInline):
@@ -66,10 +67,27 @@ class ParticipacaoAdmin(admin.ModelAdmin):
 
 @admin.register(Rodada)
 class RodadaAdmin(admin.ModelAdmin):
-    list_display = ('campeonato', 'numero', 'nome',
-                    'data_rodada', 'total_partidas', 'local_padrao')
-    list_filter = ('campeonato', 'data_rodada')
+    list_display = ('campeonato', 'numero', 'nome', 'tipo_rodada',
+                    'data_inicio', 'grupo', 'total_partidas')
+    list_filter = ('campeonato', 'tipo_rodada', 'grupo', 'data_inicio')
     search_fields = ('campeonato__nome', 'nome')
+    readonly_fields = ('criado_em', 'atualizado_em')
+
+    fieldsets = (
+        ('Informações Básicas', {
+            'fields': ('campeonato', 'numero', 'nome', 'tipo_rodada')
+        }),
+        ('Datas e Local', {
+            'fields': ('data_inicio', 'data_fim', 'local_padrao')
+        }),
+        ('Configurações', {
+            'fields': ('grupo', 'partidas_simultaneas', 'observacoes')
+        }),
+        ('Metadados', {
+            'fields': ('criado_em', 'atualizado_em'),
+            'classes': ('collapse',)
+        })
+    )
 
     def total_partidas(self, obj):
         return obj.partida_set.count()
@@ -78,22 +96,30 @@ class RodadaAdmin(admin.ModelAdmin):
 
 @admin.register(Partida)
 class PartidaAdmin(admin.ModelAdmin):
-    list_display = ('__str__', 'rodada', 'local', 'data_partida',
-                    'horario', 'status', 'resultado_display')
-    list_filter = ('status', 'rodada__campeonato', 'data_partida')
+    list_display = ('__str__', 'rodada', 'local', 'data_hora',
+                    'status', 'arbitro', 'resultado_display')
+    list_filter = ('status', 'rodada__campeonato', 'rodada__tipo_rodada')
     search_fields = ('equipe_mandante__nome',
-                     'equipe_visitante__nome', 'local')
+                     'equipe_visitante__nome', 'local', 'arbitro')
     autocomplete_fields = ('equipe_mandante', 'equipe_visitante')
+    readonly_fields = ('criado_em', 'atualizado_em', 'resultado_registrado_em')
 
     fieldsets = (
         ('Partida', {
             'fields': ('rodada', 'equipe_mandante', 'equipe_visitante')
         }),
-        ('Detalhes', {
-            'fields': ('local', 'data_partida', 'horario', 'status', 'observacoes')
+        ('Local e Horário', {
+            'fields': ('local', 'data_hora', 'duracao_prevista')
+        }),
+        ('Status e Observações', {
+            'fields': ('status', 'arbitro', 'observacoes')
         }),
         ('Resultado', {
-            'fields': ('gols_mandante', 'gols_visitante'),
+            'fields': ('gols_mandante', 'gols_visitante', 'penaltis_mandante', 'penaltis_visitante'),
+            'classes': ('collapse',)
+        }),
+        ('Metadados', {
+            'fields': ('criado_em', 'atualizado_em', 'resultado_registrado_em'),
             'classes': ('collapse',)
         })
     )

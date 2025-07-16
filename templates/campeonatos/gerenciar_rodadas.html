@@ -118,11 +118,11 @@
 													</small>
 												</div>
 
-												{% if partida.horario or partida.local %}
+												{% if partida.data_hora or partida.local %}
 													<div class="text-muted small mt-1">
-														{% if partida.horario %}
+														{% if partida.data_hora %}
 															<i class="fas fa-clock"></i>
-															{{ partida.horario|time:"H:i" }}
+															{{ partida.data_hora|date:"d/m/Y H:i" }}
 														{% endif %}
 														{% if partida.local %}
 															<i class="fas fa-map-marker-alt"></i> 

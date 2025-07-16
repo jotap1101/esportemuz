@@ -1,132 +1,36 @@
 import random
 from itertools import combinations
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime, time
 from django.db import transaction
-from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao, ConfiguracaoRodada
+from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao
 
 
 class RodadaService:
     """Serviço para gerenciamento avançado de rodadas e partidas"""
 
-    @staticmethod
-    def criar_configuracao_rodada(campeonato, tipo_configuracao='manual', partidas_por_rodada=1, dias_entre_rodadas=7, data_inicio=None):
-        """Cria ou atualiza a configuração de rodada para um campeonato"""
-        configuracao, created = ConfiguracaoRodada.objects.get_or_create(
-            campeonato=campeonato,
-            defaults={
-                'tipo_configuracao': tipo_configuracao,
-                'partidas_por_rodada': partidas_por_rodada,
-                'dias_entre_rodadas': dias_entre_rodadas,
-                'data_inicio_campeonato': data_inicio
-            }
-        )
+    # TEMPORARIAMENTE COMENTADO - SERÁ REFATORADO PARA USAR CONFIGURAÇÕES DO CAMPEONATO
+    # @staticmethod
+    # def criar_configuracao_rodada(campeonato, tipo_configuracao='manual', partidas_por_rodada=1, dias_entre_rodadas=7, data_inicio=None):
+    #     """Cria ou atualiza a configuração de rodada para um campeonato"""
+    #     # Será refatorado para usar campos do modelo Campeonato
 
-        if not created:
-            configuracao.tipo_configuracao = tipo_configuracao
-            configuracao.partidas_por_rodada = partidas_por_rodada
-            configuracao.dias_entre_rodadas = dias_entre_rodadas
-            if data_inicio:
-                configuracao.data_inicio_campeonato = data_inicio
-            configuracao.save()
+    # @staticmethod
+    # def gerar_rodadas_configuravel(campeonato):
+    #     """Gera rodadas baseadas na configuração do campeonato"""
+    #     # Será refatorado para usar campos do modelo Campeonato
 
-        return configuracao
+    # @staticmethod
+    # def _gerar_rodadas_automaticas(campeonato, configuracao):
+    #     """Gera rodadas automaticamente baseadas na configuração"""
+    #     # Será refatorado para usar campos do modelo Campeonato
+
+    # @staticmethod
+    # def _preparar_estrutura_manual(campeonato, configuracao):
+    #     """Prepara estrutura básica para configuração manual"""
+    #     # Será refatorado para usar campos do modelo Campeonato
 
     @staticmethod
-    def gerar_rodadas_configuravel(campeonato):
-        """Gera rodadas baseadas na configuração do campeonato"""
-        try:
-            configuracao = campeonato.configuracao_rodada
-        except ConfiguracaoRodada.DoesNotExist:
-            # Criar configuração padrão se não existir
-            configuracao = RodadaService.criar_configuracao_rodada(campeonato)
-
-        if configuracao.tipo_configuracao == 'automatica':
-            return RodadaService._gerar_rodadas_automaticas(campeonato, configuracao)
-        else:
-            return RodadaService._preparar_estrutura_manual(campeonato, configuracao)
-
-    @staticmethod
-    def _gerar_rodadas_automaticas(campeonato, configuracao):
-        """Gera rodadas automaticamente baseadas na configuração"""
-        equipes = list(campeonato.participacao_set.all(
-        ).values_list('equipe', flat=True))
-
-        if len(equipes) < 2:
-            raise ValueError(
-                "É necessário pelo menos 2 equipes para gerar as rodadas")
-
-        # Limpar rodadas existentes
-        Rodada.objects.filter(campeonato=campeonato).delete()
-
-        # Gerar todas as combinações de partidas
-        todas_partidas = list(combinations(equipes, 2))
-        # Embaralhar para distribuição aleatória
-        random.shuffle(todas_partidas)
-
-        # Calcular datas das rodadas
-        data_atual = configuracao.data_inicio_campeonato or date.today()
-
-        rodada_num = 1
-        for i in range(0, len(todas_partidas), configuracao.partidas_por_rodada):
-            # Criar rodada
-            rodada = Rodada.objects.create(
-                campeonato=campeonato,
-                numero=rodada_num,
-                nome=f"Rodada {rodada_num}",
-                data_rodada=data_atual
-            )
-
-            # Criar partidas da rodada
-            partidas_rodada = todas_partidas[i:i +
-                                             configuracao.partidas_por_rodada]
-            for equipe_mandante_id, equipe_visitante_id in partidas_rodada:
-                Partida.objects.create(
-                    rodada=rodada,
-                    equipe_mandante_id=equipe_mandante_id,
-                    equipe_visitante_id=equipe_visitante_id,
-                    data_partida=data_atual
-                )
-
-            # Próxima data
-            data_atual += timedelta(days=configuracao.dias_entre_rodadas)
-            rodada_num += 1
-
-        return rodada_num - 1
-
-    @staticmethod
-    def _preparar_estrutura_manual(campeonato, configuracao):
-        """Prepara estrutura básica para configuração manual"""
-        equipes = list(campeonato.participacao_set.all(
-        ).values_list('equipe', flat=True))
-
-        if len(equipes) < 2:
-            raise ValueError(
-                "É necessário pelo menos 2 equipes para preparar as rodadas")
-
-        # Limpar rodadas existentes
-        Rodada.objects.filter(campeonato=campeonato).delete()
-
-        # Calcular número aproximado de rodadas necessárias
-        total_partidas = len(list(combinations(equipes, 2)))
-        num_rodadas = (total_partidas + configuracao.partidas_por_rodada -
-                       1) // configuracao.partidas_por_rodada
-
-        # Criar estrutura básica de rodadas vazias
-        data_atual = configuracao.data_inicio_campeonato or date.today()
-
-        for i in range(1, num_rodadas + 1):
-            Rodada.objects.create(
-                campeonato=campeonato,
-                numero=i,
-                nome=f"Rodada {i}",
-                data_rodada=data_atual
-            )
-            data_atual += timedelta(days=configuracao.dias_entre_rodadas)
-
-        return num_rodadas
-
-    @staticmethod
-    def adicionar_partida_manual(rodada, equipe_mandante, equipe_visitante, local=None, horario=None, data_partida=None):
+    def adicionar_partida_manual(rodada, equipe_mandante, equipe_visitante, local=None, data_hora=None, arbitro=None):
         """Adiciona uma partida manualmente a uma rodada"""
         # Verificar se já existe uma partida entre essas equipes na rodada
         if Partida.objects.filter(
@@ -138,18 +42,18 @@ class RodadaService:
                 "Já existe uma partida entre essas equipes nesta rodada")
 
         # Verificar se a rodada não excede o limite de partidas
-        configuracao = rodada.campeonato.configuracao_rodada
-        if rodada.total_partidas() >= configuracao.partidas_por_rodada:
+        # TODO: Refatorar para usar campos do campeonato
+        if rodada.total_partidas() >= rodada.campeonato.partidas_por_rodada:
             raise ValueError(
-                f"Esta rodada já atingiu o limite de {configuracao.partidas_por_rodada} partidas")
+                f"Esta rodada já atingiu o limite de {rodada.campeonato.partidas_por_rodada} partidas")
 
         partida = Partida.objects.create(
             rodada=rodada,
             equipe_mandante=equipe_mandante,
             equipe_visitante=equipe_visitante,
             local=local or rodada.local_padrao,
-            data_partida=data_partida or rodada.data_rodada,
-            horario=horario
+            data_hora=data_hora or (datetime.combine(rodada.data_inicio, time(15, 0)) if rodada.data_inicio else None),
+            arbitro=arbitro or ''
         )
 
         return partida
@@ -158,7 +62,7 @@ class RodadaService:
     def reagrupar_partidas_por_data(campeonato):
         """Reagrupa partidas existentes por data em novas rodadas"""
         partidas = Partida.objects.filter(
-            rodada__campeonato=campeonato).order_by('data_partida', 'horario')
+            rodada__campeonato=campeonato).order_by('data_hora')
 
         if not partidas.exists():
             return
@@ -169,7 +73,7 @@ class RodadaService:
         # Agrupar partidas por data
         partidas_por_data = {}
         for partida in partidas:
-            data = partida.data_partida or date.today()
+            data = partida.data_hora.date() if partida.data_hora else date.today()
             if data not in partidas_por_data:
                 partidas_por_data[data] = []
             partidas_por_data[data].append(partida)
@@ -396,21 +300,19 @@ class PartidaService:
         """Obtém os últimos resultados finalizados"""
         return Partida.objects.filter(
             status='finalizada'
-        ).order_by('-data_partida', '-horario', '-id')[:limite]
+        ).order_by('-data_hora', '-id')[:limite]
 
     @staticmethod
     def obter_proximas_partidas(limite=10):
         """Obtém as próximas partidas pendentes"""
         return Partida.objects.filter(
             status='pendente'
-        ).order_by('data_partida', 'horario', 'id')[:limite]
+        ).order_by('data_hora', 'id')[:limite]
 
     @staticmethod
-    def agendar_partida(partida, data_partida, horario=None, local=None):
-        """Agenda uma partida com data, horário e local específicos"""
-        partida.data_partida = data_partida
-        if horario:
-            partida.horario = horario
+    def agendar_partida(partida, data_hora, local=None):
+        """Agenda uma partida com data/horário e local específicos"""
+        partida.data_hora = data_hora
         if local:
             partida.local = local
         partida.save()
@@ -422,11 +324,11 @@ class PartidaService:
         partidas = Partida.objects.filter(rodada__campeonato=campeonato)
 
         if data_inicio:
-            partidas = partidas.filter(data_partida__gte=data_inicio)
+            partidas = partidas.filter(data_hora__date__gte=data_inicio)
         if data_fim:
-            partidas = partidas.filter(data_partida__lte=data_fim)
+            partidas = partidas.filter(data_hora__date__lte=data_fim)
 
-        return partidas.order_by('data_partida', 'horario')
+        return partidas.order_by('data_hora')
 
     @staticmethod
     def obter_partidas_por_rodada_agrupadas(campeonato):
@@ -436,7 +338,7 @@ class PartidaService:
 
         resultado = []
         for rodada in rodadas:
-            partidas = rodada.partida_set.all().order_by('data_partida', 'horario')
+            partidas = rodada.partida_set.all().order_by('data_hora')
             resultado.append({
                 'rodada': rodada,
                 'partidas': partidas,

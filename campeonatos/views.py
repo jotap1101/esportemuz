@@ -8,9 +8,9 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 import json
 
-from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao, ConfiguracaoRodada
+from .models import Campeonato, Equipe, Participacao, Rodada, Partida, Classificacao
 from .services import CampeonatoService, ClassificacaoService, PartidaService, RodadaService
-from .forms import CampeonatoForm, EquipeForm, PartidaForm, ConfiguracaoRodadaForm, RodadaForm, PartidaManualForm
+from .forms import CampeonatoForm, EquipeForm, PartidaForm, RodadaForm, PartidaManualForm
 
 
 def dashboard(request):
@@ -458,75 +458,18 @@ def partidas_list(request):
     return render(request, 'campeonatos/partidas_list.html', context)
 
 
-# Novas views para gerenciamento de rodadas
-def configuracao_rodada(request, campeonato_id):
-    """Configuração de rodadas para um campeonato"""
-    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+# NOTA: Estas funções foram comentadas pois usavam ConfiguracaoRodada que foi removido
+# TODO: Refatorar para usar as configurações que agora estão no modelo Campeonato
 
-    try:
-        configuracao = campeonato.configuracao_rodada
-    except ConfiguracaoRodada.DoesNotExist:
-        configuracao = None
+# def configuracao_rodada(request, campeonato_id):
+#     """Configuração de rodadas para um campeonato"""
+#     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+#     # Implementação será refatorada...
 
-    if request.method == 'POST':
-        form = ConfiguracaoRodadaForm(request.POST, instance=configuracao)
-        if form.is_valid():
-            configuracao = form.save(commit=False)
-            configuracao.campeonato = campeonato
-            configuracao.save()
-            messages.success(
-                request, 'Configuração de rodada salva com sucesso!')
-
-            # Redirecionar para gerar rodadas se solicitado
-            if 'gerar_rodadas' in request.POST:
-                return redirect('gerar_rodadas', campeonato_id=campeonato.id)
-
-            return redirect('campeonato_detail', pk=campeonato.id)
-    else:
-        form = ConfiguracaoRodadaForm(instance=configuracao)
-
-    context = {
-        'campeonato': campeonato,
-        'form': form,
-        'configuracao': configuracao
-    }
-    return render(request, 'campeonatos/configuracao_rodada.html', context)
-
-
-def gerar_rodadas(request, campeonato_id):
-    """Gera rodadas baseadas na configuração do campeonato"""
-    campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
-
-    if request.method == 'POST':
-        try:
-            num_rodadas = RodadaService.gerar_rodadas_configuravel(campeonato)
-
-            if campeonato.configuracao_rodada.tipo_configuracao == 'automatica':
-                messages.success(
-                    request, f'{num_rodadas} rodadas geradas automaticamente com sucesso!')
-            else:
-                messages.success(
-                    request, f'Estrutura de {num_rodadas} rodadas preparada para configuração manual!')
-
-        except ValueError as e:
-            messages.error(request, str(e))
-        except Exception as e:
-            messages.error(request, f'Erro ao gerar rodadas: {str(e)}')
-
-        return redirect('gerenciar_rodadas', campeonato_id=campeonato.id)
-
-    try:
-        configuracao = campeonato.configuracao_rodada
-    except ConfiguracaoRodada.DoesNotExist:
-        messages.error(
-            request, 'Configure primeiro as rodadas antes de gerá-las.')
-        return redirect('configuracao_rodada', campeonato_id=campeonato.id)
-
-    context = {
-        'campeonato': campeonato,
-        'configuracao': configuracao
-    }
-    return render(request, 'campeonatos/gerar_rodadas.html', context)
+# def gerar_rodadas(request, campeonato_id):
+#     """Gera rodadas baseadas na configuração do campeonato"""
+#     campeonato = get_object_or_404(Campeonato, pk=campeonato_id)
+#     # Implementação será refatorada...
 
 
 def gerenciar_rodadas(request, campeonato_id):
@@ -581,8 +524,9 @@ def adicionar_partida_manual(request, campeonato_id, rodada_id):
                     equipe_mandante=form.cleaned_data['equipe_mandante'],
                     equipe_visitante=form.cleaned_data['equipe_visitante'],
                     local=form.cleaned_data.get('local'),
-                    horario=form.cleaned_data.get('horario'),
-                    data_partida=form.cleaned_data.get('data_partida')
+                    data_hora=form.cleaned_data.get('data_hora'),
+                    duracao_prevista=form.cleaned_data.get('duracao_prevista', 90),
+                    arbitro=form.cleaned_data.get('arbitro')
                 )
                 messages.success(
                     request, f'Partida {partida} adicionada com sucesso!')
@@ -592,8 +536,9 @@ def adicionar_partida_manual(request, campeonato_id, rodada_id):
     else:
         form = PartidaManualForm(campeonato)
         # Pré-preencher data com a data da rodada
-        if rodada.data_rodada:
-            form.fields['data_partida'].initial = rodada.data_rodada
+        if rodada.data_inicio:
+            from datetime import datetime, time
+            form.fields['data_hora'].initial = datetime.combine(rodada.data_inicio, time(15, 0))
 
     # Obter partidas disponíveis para mostrar opções
     partidas_disponiveis = RodadaService.obter_partidas_disponiveis_para_rodada(
@@ -625,12 +570,12 @@ def reagrupar_partidas_por_data(request, campeonato_id):
 
     # Mostrar preview do reagrupamento
     partidas = Partida.objects.filter(
-        rodada__campeonato=campeonato).order_by('data_partida', 'horario')
+        rodada__campeonato=campeonato).order_by('data_hora')
 
     # Agrupar por data para mostrar preview
     partidas_por_data = {}
     for partida in partidas:
-        data = partida.data_partida or 'Sem data'
+        data = partida.data_hora.date() if partida.data_hora else 'Sem data'
         if data not in partidas_por_data:
             partidas_por_data[data] = []
         partidas_por_data[data].append(partida)

@@ -509,12 +509,9 @@
 																		<i class="bi bi-geo-alt me-1"></i>
 																		{{ partida.local }} 
 																	{% endif %} 
-																	{% if partida.data_partida and partida.horario %}
+																	{% if partida.data_hora %}
 																		<i class="bi bi-clock ms-2 me-1"></i>
-																		{{ partida.data_partida|date:"d/m" }} {{ partida.horario|time:"H:i" }}
-																	{% elif partida.data_partida %} 
-																		<i class="bi bi-clock ms-2 me-1"></i>
-																		{{ partida.data_partida|date:"d/m/Y" }} 
+																		{{ partida.data_hora|date:"d/m/Y H:i" }}
 																	{% endif %}
 																</small>
 																{% if user.is_authenticated and partida.status == 'pendente' %}
@@ -597,12 +594,9 @@
 																	<i class="bi bi-geo-alt me-1"></i>
 																	{{ partida.local }}
 																{% endif %}
-																{% if partida.data_partida and partida.horario %}
+																{% if partida.data_hora %}
 																	<i class="bi bi-clock ms-2 me-1"></i>
-																	{{ partida.data_partida|date:"d/m" }} {{ partida.horario|time:"H:i" }} 
-																{% elif partida.data_partida %}
-																	<i class="bi bi-clock ms-2 me-1"></i>
-																	{{ partida.data_partida|date:"d/m/Y" }}
+																	{{ partida.data_hora|date:"d/m/Y H:i" }} 
 																{% endif %}
 															</small>
 															{% if user.is_authenticated and partida.status == 'pendente' %}
